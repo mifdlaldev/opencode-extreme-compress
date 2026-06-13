@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["bun-types"]
+    "types": ["bun"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
