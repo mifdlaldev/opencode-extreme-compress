@@ -8,7 +8,7 @@ import {
 
 export function compressToolOutput(
   input: string,
-  toolName: string,
+  _toolName: string,
   config: ToolOutputConfig
 ): CompressionResult {
   if (!config.enabled) {
@@ -22,7 +22,7 @@ export function compressToolOutput(
 
   // Byte truncation takes priority (it's more aggressive)
   if (totalBytes > config.maxBytes) {
-    return truncateByBytes(input, lines, config, originalTokens, totalBytes);
+    return truncateByBytes(input, config, originalTokens, totalBytes);
   }
 
   if (totalLines > config.headLines + config.tailLines) {
@@ -92,7 +92,6 @@ function truncateByLines(
 
 function truncateByBytes(
   input: string,
-  lines: string[],
   config: ToolOutputConfig,
   originalTokens: number,
   totalBytes: number
