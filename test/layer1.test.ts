@@ -58,3 +58,76 @@ describe('Layer 1: Tool Output Filter', () => {
     expect(result.compressed).toContain('truncated');
   });
 });
+
+describe('Layer 1: edge cases', () => {
+  test('handles empty output', () => {
+    const result = compressToolOutput('', 'bash', defaultConfig);
+    expect(result.method).toBe('none');
+    expect(result.compressed).toBe('');
+  });
+
+  test('handles single huge line (char truncation)', () => {
+    const input = 'x'.repeat(200000);
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    expect(result.method).toBe('truncate');
+    expect(result.compressed.length).toBeLessThan(200000);
+  });
+
+  test('handles JSON output without breaking structure', () => {
+    const obj = { foo: 'bar', items: Array.from({ length: 100 }, (_, i) => ({ id: i })) };
+    const input = JSON.stringify(obj, null, 2);
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    expect(['none', 'truncate']).toContain(result.method);
+  });
+
+  test('handles output with mixed line endings (CRLF/LF)', () => {
+    const input = 'line1\r\nline2\nline3\r\nline4';
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    expect(result.compressed).toContain('line1');
+    expect(result.compressed).toContain('line4');
+  });
+
+  test('handles output with ANSI color codes', () => {
+    const ansi = '\x1b[31mERROR:\x1b[0m something failed';
+    const input = ansi + '\nnormal line';
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    // ANSI codes may or may not be preserved, but content "ERROR" should be there
+    expect(result.compressed).toContain('ERROR');
+  });
+
+  test('preserves Error class names', () => {
+    const lines = Array.from({ length: 500 }, (_, i) => `line ${i}`);
+    lines[200] = 'TypeError: Cannot read property';
+    const input = lines.join('\n');
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    expect(result.compressed).toContain('TypeError');
+  });
+
+  test('does not mutate input string', () => {
+    const input = Array.from({ length: 5000 }, (_, i) => `line ${i}`).join('\n');
+    const original = input;
+    compressToolOutput(input, 'bash', defaultConfig);
+    expect(input).toBe(original);
+  });
+
+  test('marker format is parseable', () => {
+    const input = Array.from({ length: 5000 }, (_, i) => `line ${i}`).join('\n');
+    const result = compressToolOutput(input, 'bash', defaultConfig);
+    expect(result.marker).toMatch(/\[EXTREME-COMPRESS L1: \d+→\d+ tokens \(\d+% saved\)/);
+  });
+
+  test('handles headLines > total lines (no truncation)', () => {
+    const input = 'a\nb\nc';
+    const config = { ...defaultConfig, headLines: 100, tailLines: 100 };
+    const result = compressToolOutput(input, 'bash', config);
+    expect(result.method).toBe('none');
+  });
+
+  test('handles headLines = 0 (only tail)', () => {
+    const input = Array.from({ length: 1000 }, (_, i) => `line ${i}`).join('\n');
+    const config = { ...defaultConfig, headLines: 0, tailLines: 50 };
+    const result = compressToolOutput(input, 'bash', config);
+    expect(result.method).toBe('truncate');
+    expect(result.compressed.split('\n').length).toBeLessThanOrEqual(55);
+  });
+});
