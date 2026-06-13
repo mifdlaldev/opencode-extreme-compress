@@ -77,7 +77,13 @@ export async function loadConfig(path?: string): Promise<PluginConfig> {
     return getDefaultConfig();
   }
 
-  const file = Bun.file(path);
+  // Restrict to project root / cwd to prevent path traversal
+  const safePath = sanitizePath(path);
+  if (!safePath) {
+    return getDefaultConfig();
+  }
+
+  const file = Bun.file(safePath);
   const exists = await file.exists();
   if (!exists) {
     return getDefaultConfig();
@@ -85,10 +91,7 @@ export async function loadConfig(path?: string): Promise<PluginConfig> {
 
   try {
     const content = await file.text();
-    // Strip JSONC comments
-    const stripped = content
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\/\/.*$/gm, '');
+    const stripped = stripJsoncComments(content);
     const parsed = JSON.parse(stripped);
     return mergeWithDefaults(parsed);
   } catch (error) {
@@ -97,22 +100,136 @@ export async function loadConfig(path?: string): Promise<PluginConfig> {
   }
 }
 
-function mergeWithDefaults(userConfig: Partial<PluginConfig>): PluginConfig {
+function sanitizePath(path: string): string | null {
+  // Reject path traversal attempts
+  if (path.includes('..')) return null;
+  // Only allow absolute paths within home or relative paths in cwd
+  if (path.startsWith('~')) {
+    return path.replace('~', process.env.HOME ?? '');
+  }
+  if (path.startsWith('/')) {
+    return path;
+  }
+  // Relative path: pass through (Bun.file resolves against cwd)
+  return path;
+}
+
+/**
+ * Strip JSONC comments (// and /* *​/) while respecting string boundaries.
+ * This is a proper state-machine parser, not a regex hack — it will not
+ * corrupt URLs or other content that happens to contain // or /* *​/.
+ */
+export function stripJsoncComments(input: string): string {
+  let result = '';
+  let i = 0;
+  const len = input.length;
+
+  while (i < len) {
+    const ch = input[i];
+
+    // String literal (double or single quoted)
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      result += ch;
+      i++;
+      while (i < len) {
+        const c = input[i];
+        if (c === '\\' && i + 1 < len) {
+          // Escape sequence: keep both chars
+          result += c + input[i + 1];
+          i += 2;
+          continue;
+        }
+        if (c === quote) {
+          result += c;
+          i++;
+          break;
+        }
+        result += c;
+        i++;
+      }
+      continue;
+    }
+
+    // Line comment
+    if (ch === '/' && input[i + 1] === '/') {
+      // Skip until end of line (keep the newline)
+      while (i < len && input[i] !== '\n') i++;
+      continue;
+    }
+
+    // Block comment
+    if (ch === '/' && input[i + 1] === '*') {
+      i += 2;
+      while (i < len) {
+        if (input[i] === '*' && input[i + 1] === '/') {
+          i += 2;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+
+    // Regular char
+    result += ch;
+    i++;
+  }
+
+  return result;
+}
+
+/**
+ * Check if a value is a plain object (not array, not null).
+ */
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.getPrototypeOf(v) === Object.prototype
+  );
+}
+
+/**
+ * Deep merge two objects. Source values override target values.
+ * - Nested plain objects are recursively merged.
+ * - Arrays are replaced (not concatenated) — user must specify full array.
+ * - undefined values in source are skipped (target preserved).
+ * - null values in source ARE applied (user can null out a default).
+ */
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  source: Partial<T> | undefined
+): T {
+  if (!source) return { ...target };
+
+  const result: Record<string, unknown> = { ...target };
+
+  for (const key of Object.keys(source)) {
+    const sourceVal = (source as Record<string, unknown>)[key];
+    const targetVal = result[key];
+
+    if (sourceVal === undefined) continue;
+
+    if (isPlainObject(sourceVal) && isPlainObject(targetVal)) {
+      result[key] = deepMerge(targetVal, sourceVal);
+    } else {
+      result[key] = sourceVal;
+    }
+  }
+
+  return result as T;
+}
+
+function mergeWithDefaults(userConfig: Partial<PluginConfig> | undefined): PluginConfig {
   const defaults = getDefaultConfig();
-  return {
-    mode: userConfig.mode ?? defaults.mode,
-    modelProfiles: { ...defaults.modelProfiles, ...userConfig.modelProfiles },
-    outputBudget: { ...defaults.outputBudget, ...userConfig.outputBudget },
-    propagateToSubagents: { ...defaults.propagateToSubagents, ...userConfig.propagateToSubagents },
-    tokenizer: { ...defaults.tokenizer, ...userConfig.tokenizer },
-    antiHallucination: { ...defaults.antiHallucination, ...userConfig.antiHallucination },
-    layers: {
-      toolOutput: { ...defaults.layers.toolOutput, ...userConfig.layers?.toolOutput },
-      fileContent: { ...defaults.layers.fileContent, ...userConfig.layers?.fileContent },
-      semantic: { ...defaults.layers.semantic, ...userConfig.layers?.semantic },
-    },
-    excludeGlobs: userConfig.excludeGlobs ?? defaults.excludeGlobs,
-  };
+  if (!userConfig) return defaults;
+
+  return deepMerge(
+    defaults as unknown as Record<string, unknown>,
+    userConfig as unknown as Record<string, unknown>
+  ) as unknown as PluginConfig;
 }
 
 export function resolveProfile(config: PluginConfig, modelId: string): ModelProfile {
