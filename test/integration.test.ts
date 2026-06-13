@@ -2,8 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { loadConfig } from '../src/config';
 import { compressToolOutput } from '../src/layers/layer1-tool-output';
 import { compressFileContent } from '../src/layers/layer2-file-content';
-import { resolveEffectiveMode, shouldApplyLayer } from '../src/modes';
-import type { PluginConfig } from '../src/types';
+import { resolveEffectiveMode } from '../src/modes';
 
 describe('Integration tests', () => {
   test('1. full pipeline: load config + apply Layer 1', async () => {
@@ -15,17 +14,17 @@ describe('Integration tests', () => {
   });
 
   test('2. mode change resolves correctly per model', () => {
-    const config: PluginConfig = {
-      mode: 'light',
+    const config = {
+      mode: 'light' as const,
       modelProfiles: {
-        '*': { mode: 'light', maxContextUsage: 0.95 },
-        'minimax-m3': { mode: 'light', maxContextUsage: 0.95 },
-        'deepseek-v4-flash-free': { mode: 'medium', maxContextUsage: 0.8 },
+        '*': { mode: 'light' as const, maxContextUsage: 0.95 },
+        'minimax-m3': { mode: 'light' as const, maxContextUsage: 0.95 },
+        'deepseek-v4-flash-free': { mode: 'medium' as const, maxContextUsage: 0.8 },
       },
-    } as PluginConfig;
+    };
 
-    expect(resolveEffectiveMode(config, 'minimax-m3')).toBe('light');
-    expect(resolveEffectiveMode(config, 'deepseek-v4-flash-free')).toBe('medium');
+    expect(resolveEffectiveMode(config as any, 'minimax-m3')).toBe('light');
+    expect(resolveEffectiveMode(config as any, 'deepseek-v4-flash-free')).toBe('medium');
   });
 
   test('3. AGENTS.md-like content too small for compression', () => {
