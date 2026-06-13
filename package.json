@@ -1,0 +1,23 @@
+{
+  "name": "opencode-extreme-compress",
+  "version": "0.1.0",
+  "description": "Opencode plugin for extreme token compression with anti-hallucination guarantees",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun build src/index.ts --target=bun --outdir=dist",
+    "test": "bun test",
+    "test:hallucination": "bun test test/hallucination-resistance.test.ts",
+    "test:integration": "bun test test/integration.test.ts",
+    "test:model": "bun test test/model-specific.test.ts",
+    "lint": "bun run check",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}
