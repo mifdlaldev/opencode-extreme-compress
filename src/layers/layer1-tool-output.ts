@@ -64,14 +64,14 @@ function truncateByLines(
   });
 
   const hiddenLines = middleSlice.length - preservedMiddle.length;
-  const marker = generateLineTruncationMarker(hiddenLines, middleStart + 1, middleEnd);
+  const lineMarker = generateLineTruncationMarker(hiddenLines, middleStart + 1, middleEnd);
 
   const parts: string[] = [headSlice.join('\n')];
   if (preservedMiddle.length > 0) {
     parts.push(`[... ${hiddenLines} lines hidden, ${preservedMiddle.length} preserved ...]`);
     parts.push(preservedMiddle.map((p) => p.line).join('\n'));
   } else {
-    parts.push(marker);
+    parts.push(lineMarker);
   }
   parts.push(tailSlice.join('\n'));
 
@@ -86,7 +86,7 @@ function truncateByLines(
     compressedTokens,
     ratio,
     method: 'truncate',
-    marker: generateCompressionMarker('L1', ratio, originalTokens, compressedTokens),
+    marker: `${lineMarker} ${generateCompressionMarker('L1', ratio, originalTokens, compressedTokens)}`,
   };
 }
 

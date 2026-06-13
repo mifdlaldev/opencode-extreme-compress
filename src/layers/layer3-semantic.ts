@@ -52,13 +52,31 @@ const COMMON_WORDS = new Set([
   'early', 'young', 'important', 'public', 'same', 'able',
 ]);
 
+// Common English verbs (often appear at sentence starts, falsely flagged as PascalCase identifiers)
+const COMMON_VERBS = new Set([
+  'Modified', 'Called', 'Refactored', 'Used', 'Created', 'Added', 'Removed',
+  'Updated', 'Fixed', 'Changed', 'Implemented', 'Fixed', 'Tested', 'Built',
+  'Designed', 'Reviewed', 'Refactored', 'Optimized', 'Cleaned', 'Merged',
+  'Deployed', 'Configured', 'Installed', 'Removed', 'Replaced', 'Moved',
+  'Renamed', 'Extracted', 'Split', 'Combined', 'Wrapped', 'Unwrapped',
+  'Found', 'Discovered', 'Identified', 'Investigated', 'Analyzed', 'Verified',
+  'Confirmed', 'Rejected', 'Accepted', 'Approved', 'Rejected', 'Skipped',
+  'Failed', 'Succeeded', 'Completed', 'Started', 'Stopped', 'Paused',
+  'Resumed', 'Cancelled', 'Skipped', 'Ignored', 'Skipped', 'Included',
+  'Excluded', 'Picked', 'Selected', 'Chose', 'Opened', 'Closed', 'Read',
+  'Wrote', 'Edited', 'Deleted', 'Created', 'Saved', 'Loaded', 'Imported',
+  'Exported', 'Sent', 'Received', 'Returned', 'Got', 'Gotten', 'Given',
+]);
+
 export function extractIdentifiers(text: string): string[] {
   const ids = new Set<string>();
 
   const pascalRegex = /\b[A-Z][a-zA-Z0-9]{2,}\b/g;
   let m;
   while ((m = pascalRegex.exec(text)) !== null) {
-    ids.add(m[0]);
+    if (!COMMON_VERBS.has(m[0])) {
+      ids.add(m[0]);
+    }
   }
 
   const funcCallRegex = /\b([a-zA-Z_][a-zA-Z0-9_]{2,})\s*\(/g;
