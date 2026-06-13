@@ -198,16 +198,16 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * - undefined values in source are skipped (target preserved).
  * - null values in source ARE applied (user can null out a default).
  */
-export function deepMerge<T extends Record<string, unknown>>(
-  target: T,
-  source: Partial<T> | undefined
-): T {
+export function deepMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown> | undefined
+): Record<string, unknown> {
   if (!source) return { ...target };
 
   const result: Record<string, unknown> = { ...target };
 
   for (const key of Object.keys(source)) {
-    const sourceVal = (source as Record<string, unknown>)[key];
+    const sourceVal = source[key];
     const targetVal = result[key];
 
     if (sourceVal === undefined) continue;
@@ -219,17 +219,19 @@ export function deepMerge<T extends Record<string, unknown>>(
     }
   }
 
-  return result as T;
+  return result;
 }
 
 function mergeWithDefaults(userConfig: Partial<PluginConfig> | undefined): PluginConfig {
   const defaults = getDefaultConfig();
   if (!userConfig) return defaults;
 
-  return deepMerge(
+  // deepMerge operates on Record<string, unknown>; widen/narrow at the boundary
+  const merged = deepMerge(
     defaults as unknown as Record<string, unknown>,
     userConfig as unknown as Record<string, unknown>
-  ) as unknown as PluginConfig;
+  );
+  return merged as unknown as PluginConfig;
 }
 
 export function resolveProfile(config: PluginConfig, modelId: string): ModelProfile {

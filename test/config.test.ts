@@ -166,11 +166,11 @@ describe('stripJsoncComments', () => {
 
 describe('deepMerge', () => {
   test('merges nested objects recursively', () => {
-    const target = {
+    const target: Record<string, unknown> = {
       a: { x: 1, y: 2 },
       b: 'keep',
     };
-    const source = { a: { y: 20, z: 3 } };
+    const source: Record<string, unknown> = { a: { y: 20, z: 3 } };
     const result = deepMerge(target, source);
     expect(result).toEqual({ a: { x: 1, y: 20, z: 3 }, b: 'keep' });
   });
@@ -191,14 +191,14 @@ describe('deepMerge', () => {
   });
 
   test('applies null values (does not skip)', () => {
-    const target = { a: { x: 1 } };
-    const source = { a: null };
+    const target: Record<string, unknown> = { a: { x: 1 } };
+    const source: Record<string, unknown> = { a: null };
     const result = deepMerge(target, source);
     expect(result.a).toBeNull();
   });
 
   test('handles undefined source gracefully', () => {
-    const target = { a: 1 };
+    const target: Record<string, unknown> = { a: 1 };
     const result = deepMerge(target, undefined);
     expect(result).toEqual({ a: 1 });
   });
