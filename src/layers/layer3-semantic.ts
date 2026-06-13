@@ -93,3 +93,61 @@ export function verifySummary(original: string, summary: string): VerificationRe
     fellBack: false,
   };
 }
+
+export interface SummarizerClient {
+  prompt(input: { prompt: string; model?: string; variant?: string }): Promise<string>;
+}
+
+export interface SummarizerOptions {
+  maxRetries?: number;
+  model?: string;
+  variant?: string;
+}
+
+export interface SummarizerResult {
+  summary: string | null;
+  attempts: number;
+  fellBack: boolean;
+  verificationPassed: boolean;
+}
+
+export async function summarizeWithRetry(
+  originalContent: string,
+  client: SummarizerClient,
+  options: SummarizerOptions = {}
+): Promise<SummarizerResult> {
+  const maxRetries = options.maxRetries ?? 2;
+  const prompt = buildSummarizationPrompt(originalContent, '');
+
+  let attempts = 0;
+
+  for (let i = 0; i <= maxRetries; i++) {
+    attempts++;
+    try {
+      const summary = await client.prompt({
+        prompt,
+        model: options.model,
+        variant: options.variant ?? 'low',
+      });
+
+      const verification = verifySummary(originalContent, summary);
+      if (verification.passed) {
+        return {
+          summary,
+          attempts,
+          fellBack: false,
+          verificationPassed: true,
+        };
+      }
+    } catch {
+      // Continue to retry
+    }
+  }
+
+  return {
+    summary: null,
+    attempts,
+    fellBack: true,
+    verificationPassed: false,
+  };
+}

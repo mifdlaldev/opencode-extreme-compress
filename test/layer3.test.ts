@@ -67,3 +67,55 @@ describe('Layer 3: Semantic Summarizer (non-LLM parts)', () => {
     expect(result.passed).toBe(true);
   });
 });
+
+import { summarizeWithRetry, type SummarizerClient } from '../src/layers/layer3-semantic';
+
+describe('Layer 3: summarizeWithRetry (mocked LLM)', () => {
+  function createMockClient(response: string, failFirstN: number = 0): SummarizerClient {
+    let calls = 0;
+    return {
+      prompt: async () => {
+        calls++;
+        if (calls <= failFirstN) {
+          throw new Error('Mocked LLM failure');
+        }
+        return response;
+      },
+    };
+  }
+
+  test('returns summary on first success', async () => {
+    const client = createMockClient('src/foo.ts validateUserToken called');
+    const result = await summarizeWithRetry('src/foo.ts validateUserToken called', client);
+    expect(result.summary).toBe('src/foo.ts validateUserToken called');
+    expect(result.attempts).toBe(1);
+    expect(result.fellBack).toBe(false);
+    expect(result.verificationPassed).toBe(true);
+  });
+
+  test('retries on failure then succeeds', async () => {
+    const client = createMockClient('src/foo.ts validateUserToken', 1);
+    const result = await summarizeWithRetry('src/foo.ts validateUserToken', client);
+    expect(result.attempts).toBe(2);
+    expect(result.summary).toBe('src/foo.ts validateUserToken');
+    expect(result.fellBack).toBe(false);
+  });
+
+  test('falls back after max retries', async () => {
+    const client = createMockClient('', 5);
+    const result = await summarizeWithRetry('any original', client, { maxRetries: 2 });
+    expect(result.attempts).toBe(3); // initial + 2 retries
+    expect(result.fellBack).toBe(true);
+    expect(result.summary).toBeNull();
+  });
+
+  test('falls back when verification fails', async () => {
+    // Mock returns a summary that fails verification (missing paths)
+    const client = createMockClient('vague summary');
+    const original = 'src/foo.ts validateUserToken';
+    const result = await summarizeWithRetry(original, client, { maxRetries: 1 });
+    expect(result.fellBack).toBe(true);
+    expect(result.summary).toBeNull();
+    expect(result.verificationPassed).toBe(false);
+  });
+});
