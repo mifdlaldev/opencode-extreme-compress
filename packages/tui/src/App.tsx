@@ -11,6 +11,7 @@ interface AppProps {
   sessions: SessionStats[];
   liveEvents: StatsEvent[];
   statsPath: string;
+  pricing?: { hasAny: boolean };
   onRefresh?: () => void;
 }
 
@@ -25,7 +26,7 @@ function prevView(v: View): View {
   return VIEWS[(VIEWS.indexOf(v) - 1 + VIEWS.length) % VIEWS.length];
 }
 
-export const App = ({ overall, sessions, liveEvents, statsPath, onRefresh }: AppProps) => {
+export const App = ({ overall, sessions, liveEvents, statsPath, pricing, onRefresh }: AppProps) => {
   const [view, setView] = useState<View>('overview');
 
   useInput((input, key) => {
@@ -56,7 +57,7 @@ export const App = ({ overall, sessions, liveEvents, statsPath, onRefresh }: App
         <Text dimColor>[r]efresh</Text>
       </Box>
       <Box flexDirection="column" paddingX={1} paddingY={1}>
-        {view === 'overview' && <Overview stats={overall} />}
+        {view === 'overview' && <Overview stats={overall} pricing={pricing ?? { hasAny: false }} />}
         {view === 'models' && <Models byModel={overall.byModel} />}
         {view === 'sessions' && <Sessions sessions={sessions} />}
         {view === 'live' && <Live events={liveEvents} />}

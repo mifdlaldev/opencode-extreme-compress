@@ -27,7 +27,7 @@ describe('TUI data flow regression (no sessions shown bug)', () => {
       '{"ts":100,"type":"session.start","sessionId":"s1","model":"minimax-m3","mode":"light"}\n'
     );
     const events = await readStatsFile(statsPath);
-    const stats = aggregateOverall(events);
+    const stats = aggregateOverall(events, new Map());
     expect(stats.totalSessions).toBe(1);
     expect(stats.byModel.length).toBe(1);
     expect(stats.byModel[0].model).toBe('minimax-m3');
@@ -107,7 +107,7 @@ describe('TUI data flow regression (no sessions shown bug)', () => {
 
     // Re-read file to get full state (simulating TUI's reload)
     const allEvents = await readStatsFile(statsPath);
-    const stats = aggregateOverall(allEvents);
+    const stats = aggregateOverall(allEvents, new Map());
 
     // THIS is the assertion the user was seeing fail:
     // They expected to see 1 session, but TUI showed 0

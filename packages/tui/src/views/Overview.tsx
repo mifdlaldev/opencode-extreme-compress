@@ -4,7 +4,12 @@ import type { OverallStats } from '../lib/types.js';
 
 const fmt = (n: number) => n.toLocaleString();
 
-export const Overview = ({ stats }: { stats: OverallStats }) => {
+interface OverviewProps {
+  stats: OverallStats;
+  pricing: { hasAny: boolean };
+}
+
+export const Overview = ({ stats, pricing }: OverviewProps) => {
   const totalSavedPct = stats.totalOriginalInputTokens > 0 ? (stats.avgRatio * 100).toFixed(1) : '0';
   const maxModeSessions = Math.max(...stats.byMode.map(m => m.sessions), 1);
   const maxLayerSaved = Math.max(...stats.byLayer.map(l => l.totalSaved), 1);
@@ -28,6 +33,19 @@ export const Overview = ({ stats }: { stats: OverallStats }) => {
         <Text bold color="yellow">{fmt(stats.totalOutputTokens)}</Text>
         <Text dimColor> tokens (estimated from model responses)</Text>
       </Box>
+
+      {pricing.hasAny ? (
+        <Box marginBottom={1}>
+          <Text>Cost saved: </Text>
+          <Text bold color="green">${stats.costSaved.toFixed(4)}</Text>
+          <Text>  (was ${stats.costTotalOriginal.toFixed(4)}, now ${stats.costTotal.toFixed(4)} USD)</Text>
+          <Text dimColor>  · {stats.modelsWithPricing} model(s) with pricing</Text>
+        </Box>
+      ) : (
+        <Box marginBottom={1}>
+          <Text dimColor>Cost: no pricing data. Add `pricing` to modelProfiles in extreme-compress.jsonc to see cost.</Text>
+        </Box>
+      )}
 
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Mode distribution:</Text>

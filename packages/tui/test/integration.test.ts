@@ -20,7 +20,7 @@ describe('TUI end-to-end with realistic stats (v0.3.0 schema)', () => {
       );
 
       const events = await readStatsFile(path);
-      const stats = aggregateOverall(events);
+      const stats = aggregateOverall(events, new Map());
 
       expect(stats.totalSessions).toBe(2);
       expect(stats.totalOriginalInputTokens).toBe(6500);
@@ -41,7 +41,7 @@ describe('TUI end-to-end with realistic stats (v0.3.0 schema)', () => {
     try {
       writeFileSync(path, '');
       const events = await readStatsFile(path);
-      const stats = aggregateOverall(events);
+      const stats = aggregateOverall(events, new Map());
       expect(events).toEqual([]);
       expect(stats.totalSessions).toBe(0);
     } finally {

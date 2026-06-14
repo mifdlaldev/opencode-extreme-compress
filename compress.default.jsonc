@@ -3,10 +3,45 @@
   "mode": "light",
   "modelProfiles": {
     "*": { "maxContextUsage": 0.95 },
-    "deepseek-v4-flash-free": { "maxContextUsage": 0.80 },
-    "minimax-m3": { "maxContextUsage": 0.95 },
-    "kimi-k2.6": { "maxContextUsage": 0.90 },
-    "mimo-v2.5-free": { "maxContextUsage": 0.85 }
+    "deepseek-v4-flash-free": {
+      "maxContextUsage": 0.80,
+      "pricing": {
+        "inputPerMTok": 0,
+        "outputPerMTok": 0,
+        "currency": "USD",
+        "source": "https://opencode.ai/docs/zen/",
+        "note": "free tier; rate limits may apply"
+      }
+    },
+    "minimax-m3": {
+      "maxContextUsage": 0.95,
+      "pricing": {
+        "inputPerMTok": 0.30,
+        "outputPerMTok": 1.20,
+        "currency": "USD",
+        "source": "https://platform.minimax.io/docs/guides/pricing-paygo",
+        "note": "launch 50% off; standard rate $0.60/$2.40"
+      }
+    },
+    "kimi-k2.6": {
+      "maxContextUsage": 0.90,
+      "pricing": {
+        "inputPerMTok": 0.95,
+        "outputPerMTok": 4.00,
+        "currency": "USD",
+        "source": "https://platform.moonshot.ai/"
+      }
+    },
+    "mimo-v2.5-free": {
+      "maxContextUsage": 0.85,
+      "pricing": {
+        "inputPerMTok": 0,
+        "outputPerMTok": 0,
+        "currency": "USD",
+        "source": "https://opencode.ai/docs/zen/",
+        "note": "free tier; limited time"
+      }
+    }
   },
   "outputBudget": {
     "enabled": true,

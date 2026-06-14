@@ -2,8 +2,17 @@
 
 export type CompressionMode = 'off' | 'shadow' | 'light' | 'medium' | 'extreme';
 
+export interface Pricing {
+  inputPerMTok: number;   // USD per 1M input tokens
+  outputPerMTok: number;  // USD per 1M output tokens
+  currency: 'USD';
+  source: string;         // URL of pricing source
+  note?: string;          // e.g. "free tier", "launch discount"
+}
+
 export interface ModelProfile {
   maxContextUsage: number;  // 0.0 - 1.0, fraction of model context that can be used before compression triggers
+  pricing?: Pricing;
 }
 
 export interface ModelProfiles {

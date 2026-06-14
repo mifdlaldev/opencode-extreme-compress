@@ -1,3 +1,11 @@
+export interface Pricing {
+  inputPerMTok: number;   // USD per 1M input tokens
+  outputPerMTok: number;  // USD per 1M output tokens
+  currency: 'USD';
+  source: string;         // URL of pricing source
+  note?: string;          // e.g. "free tier", "launch discount"
+}
+
 export type StatsEvent =
   | { ts: number; type: 'session.start'; sessionId: string; model: string; mode: string }
   | { ts: number; type: 'session.end'; sessionId: string; durationMs: number; totalInputTokens: number; totalOriginalInputTokens: number; totalOutputTokens: number }
@@ -21,6 +29,14 @@ export interface SessionStats {
   totalOutputTokens: number;         // from chat.message estimation
   totalSaved: number;                 // = totalOriginalInputTokens - totalInputTokens
   errorCount: number;
+  // Cost (USD). All zero if no pricing for this model.
+  costInput: number;          // post-compression input cost
+  costInputOriginal: number;  // pre-compression input cost
+  costOutput: number;         // output cost (unchanged by compression)
+  costTotal: number;          // = costInput + costOutput (actual spent)
+  costTotalOriginal: number;  // = costInputOriginal + costOutput (would-have-spent)
+  costSaved: number;          // = costTotalOriginal - costTotal
+  pricing?: Pricing;          // pricing used for this session, if available
 }
 
 export interface ModelStats {
@@ -31,6 +47,10 @@ export interface ModelStats {
   totalOutputTokens: number;
   totalSaved: number;
   avgRatio: number;
+  costTotal: number;
+  costTotalOriginal: number;
+  costSaved: number;
+  pricing?: Pricing;
 }
 
 export interface ModeStats {
@@ -58,4 +78,9 @@ export interface OverallStats {
   byModel: ModelStats[];
   byMode: ModeStats[];
   byLayer: LayerStats[];
+  // Cost roll-up (USD). All zero if no model has pricing.
+  costTotal: number;
+  costTotalOriginal: number;
+  costSaved: number;
+  modelsWithPricing: number;  // count of models in byModel that had pricing data
 }

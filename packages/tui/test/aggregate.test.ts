@@ -1,14 +1,20 @@
 import { describe, test, expect } from 'bun:test';
 import { aggregateOverall, aggregateBySession } from '../src/lib/aggregate.js';
-import type { StatsEvent } from '../src/lib/types.js';
+import type { StatsEvent, Pricing } from '../src/lib/types.js';
+
+const emptyPricing = new Map<string, Pricing>();
 
 describe('aggregateOverall', () => {
   test('empty events returns zeros', () => {
-    const r = aggregateOverall([]);
+    const r = aggregateOverall([], emptyPricing);
     expect(r.totalSessions).toBe(0);
     expect(r.avgRatio).toBe(0);
     expect(r.totalInputTokens).toBe(0);
     expect(r.totalOutputTokens).toBe(0);
+    expect(r.costTotal).toBe(0);
+    expect(r.costTotalOriginal).toBe(0);
+    expect(r.costSaved).toBe(0);
+    expect(r.modelsWithPricing).toBe(0);
   });
 
   test('computes totals from mixed events', () => {
@@ -19,7 +25,7 @@ describe('aggregateOverall', () => {
       { ts: 4, type: 'L3', sessionId: 's1', inputTokens: 5000, compressedInputTokens: 1000, ratio: 0.8, verified: true },
       { ts: 5, type: 'session.end', sessionId: 's1', durationMs: 60000, totalInputTokens: 1300, totalOriginalInputTokens: 6500, totalOutputTokens: 800 },
     ];
-    const r = aggregateOverall(events);
+    const r = aggregateOverall(events, emptyPricing);
     expect(r.totalSessions).toBe(1);
     expect(r.totalOriginalInputTokens).toBe(6500);
     expect(r.totalInputTokens).toBe(1300);
@@ -41,7 +47,7 @@ describe('aggregateOverall', () => {
       { ts: 10, type: 'session.start', sessionId: 's2', model: 'deepseek-flash', mode: 'medium' },
       { ts: 11, type: 'L1', sessionId: 's2', tool: 'read', inputTokens: 500, compressedInputTokens: 100, ratio: 0.8, method: 'truncate' },
     ];
-    const r = aggregateOverall(events);
+    const r = aggregateOverall(events, emptyPricing);
     expect(r.byModel.length).toBe(2);
   });
 
@@ -50,10 +56,71 @@ describe('aggregateOverall', () => {
       { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
       { ts: 100, type: 'session.end', sessionId: 's1', durationMs: 5000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50 },
     ];
-    const r = aggregateOverall(events);
+    const r = aggregateOverall(events, emptyPricing);
     expect(r.totalInputTokens).toBe(100);
     expect(r.totalOriginalInputTokens).toBe(200);
     expect(r.totalOutputTokens).toBe(50);
     expect(r.totalSaved).toBe(100);
+  });
+});
+
+describe('aggregateOverall with pricing', () => {
+  const pricingMap = new Map<string, Pricing>([
+    ['minimax-m3', { inputPerMTok: 0.30, outputPerMTok: 1.20, currency: 'USD', source: 'test' }],
+    ['free-model', { inputPerMTok: 0, outputPerMTok: 0, currency: 'USD', source: 'test' }],
+  ]);
+
+  test('computes cost saved per model', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'minimax-m3', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1_000_000, compressedInputTokens: 200_000, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 200_000, totalOriginalInputTokens: 1_000_000, totalOutputTokens: 500_000 },
+    ];
+    const r = aggregateOverall(events, pricingMap);
+    // input cost: 200K/1M * 0.30 = $0.06
+    // input cost original: 1M/1M * 0.30 = $0.30
+    // output cost: 500K/1M * 1.20 = $0.60
+    // total: $0.06 + $0.60 = $0.66
+    // total original: $0.30 + $0.60 = $0.90
+    // saved: $0.24
+    expect(r.costTotal).toBeCloseTo(0.66, 4);
+    expect(r.costTotalOriginal).toBeCloseTo(0.90, 4);
+    expect(r.costSaved).toBeCloseTo(0.24, 4);
+    expect(r.modelsWithPricing).toBe(1);
+  });
+
+  test('free models have $0 cost', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'free-model', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1_000_000, compressedInputTokens: 500_000, ratio: 0.5, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 500_000, totalOriginalInputTokens: 1_000_000, totalOutputTokens: 200_000 },
+    ];
+    const r = aggregateOverall(events, pricingMap);
+    expect(r.costTotal).toBe(0);
+    expect(r.costTotalOriginal).toBe(0);
+    expect(r.costSaved).toBe(0);
+    expect(r.modelsWithPricing).toBe(1);
+  });
+
+  test('unknown models (no pricing) skip cost', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'unknown-model', mode: 'light' },
+      { ts: 2, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50 },
+    ];
+    const r = aggregateOverall(events, pricingMap);
+    expect(r.costTotal).toBe(0);
+    expect(r.modelsWithPricing).toBe(0);
+  });
+
+  test('per-model pricing is set on byModel entries', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'minimax-m3', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 200, totalOriginalInputTokens: 1000, totalOutputTokens: 500 },
+    ];
+    const r = aggregateOverall(events, pricingMap);
+    const m3 = r.byModel.find(m => m.model === 'minimax-m3');
+    expect(m3?.pricing).toBeDefined();
+    expect(m3?.pricing?.inputPerMTok).toBe(0.30);
   });
 });

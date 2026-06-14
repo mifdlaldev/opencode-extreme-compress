@@ -33,9 +33,12 @@ export const Sessions = ({ sessions }: { sessions: SessionStats[] }) => {
         <Text bold>{'Input'.padStart(10)}</Text>
         <Text bold>{'Output'.padStart(10)}</Text>
         <Text bold>{'Saved'.padStart(10)}</Text>
+        <Text bold>{'Cost $'.padStart(12)}</Text>
       </Box>
-      <Text>{'─'.repeat(82)}</Text>
+      <Text>{'─'.repeat(96)}</Text>
       {last30.map(s => {
+        const cost = s.pricing ? `$${s.costTotal.toFixed(4)}` : 'n/a';
+        const costColor = s.pricing ? 'green' : undefined;
         return (
           <Box key={s.sessionId}>
             <Text>{s.sessionId.slice(0, 12).padEnd(14)}</Text>
@@ -45,6 +48,7 @@ export const Sessions = ({ sessions }: { sessions: SessionStats[] }) => {
             <Text color="green">{fmt(s.totalInputTokens).padStart(10)}</Text>
             <Text color="yellow">{fmt(s.totalOutputTokens).padStart(10)}</Text>
             <Text color="cyan">{fmt(s.totalSaved).padStart(10)}</Text>
+            <Text color={costColor}>{cost.padStart(12)}</Text>
           </Box>
         );
       })}
