@@ -108,7 +108,7 @@ bun run build
 
 ### Phase 1 (recommended): shadow mode
 
-After installation, edit `~/.config/opencode/compress.jsonc`:
+After installation, edit `~/.config/opencode/extreme-compress.jsonc`:
 
 ```jsonc
 {

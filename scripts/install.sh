@@ -12,9 +12,9 @@ mkdir -p "${PLUGIN_DIR}/dist"
 cp "${SOURCE_DIR}/dist/index.js" "${PLUGIN_DIR}/dist/"
 cp "${SOURCE_DIR}/package.json" "${PLUGIN_DIR}/"
 
-if [ ! -f "${HOME}/.config/opencode/compress.jsonc" ]; then
-  cp "${SOURCE_DIR}/compress.default.jsonc" "${HOME}/.config/opencode/compress.jsonc"
-  echo "Default config copied to ~/.config/opencode/compress.jsonc"
+if [ ! -f "${HOME}/.config/opencode/extreme-compress.jsonc" ]; then
+  cp "${SOURCE_DIR}/compress.default.jsonc" "${HOME}/.config/opencode/extreme-compress.jsonc"
+  echo "Default config copied to ~/.config/opencode/extreme-compress.jsonc"
 fi
 
 echo ""

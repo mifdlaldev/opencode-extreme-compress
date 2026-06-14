@@ -16,7 +16,7 @@ import {
 
 const configPath =
   process.env.EXTREME_COMPRESS_CONFIG ??
-  `${process.env.HOME ?? ''}/.config/opencode/compress.jsonc`;
+  `${process.env.HOME ?? ''}/.config/opencode/extreme-compress.jsonc`;
 
 const sessionModels = new Map<string, string>();
 
