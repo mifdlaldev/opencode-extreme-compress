@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import type { OverallStats } from '../lib/types.js';
 
-const fmt = (n: number) => n.toLocaleString();
+const fmt = (n: number | undefined | null) => (n ?? 0).toLocaleString();
 
 interface OverviewProps {
   stats: OverallStats;

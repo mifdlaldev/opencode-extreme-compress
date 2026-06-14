@@ -13,7 +13,7 @@ function formatDuration(ms: number | undefined): string {
   return `${h}h ${m % 60}m`;
 }
 
-const fmt = (n: number) => n.toLocaleString();
+const fmt = (n: number | undefined | null) => (n ?? 0).toLocaleString();
 
 export const Sessions = ({ sessions }: { sessions: SessionStats[] }) => {
   const last30 = sessions.slice(-30).reverse();

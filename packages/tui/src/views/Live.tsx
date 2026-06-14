@@ -7,7 +7,7 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString('en-US', { hour12: false });
 }
 
-const fmt = (n: number) => n.toLocaleString();
+const fmt = (n: number | undefined | null) => (n ?? 0).toLocaleString();
 
 function describeEvent(ev: StatsEvent): React.ReactElement {
   switch (ev.type) {

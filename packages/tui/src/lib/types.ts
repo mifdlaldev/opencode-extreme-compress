@@ -9,9 +9,9 @@ export interface Pricing {
 export type StatsEvent =
   | { ts: number; type: 'session.start'; sessionId: string; model: string; mode: string }
   | { ts: number; type: 'session.end'; sessionId: string; durationMs: number; totalInputTokens: number; totalOriginalInputTokens: number; totalOutputTokens: number }
-  | { ts: number; type: 'L1'; sessionId: string; tool: string; inputTokens: number; compressedInputTokens: number; ratio: number; method: 'none' | 'truncate' }
-  | { ts: number; type: 'L2'; sessionId: string; file: string; inputTokens: number; compressedInputTokens: number; ratio: number }
-  | { ts: number; type: 'L3'; sessionId: string; inputTokens: number; compressedInputTokens: number; ratio: number; verified: boolean }
+  | { ts: number; type: 'L1'; sessionId: string; tool: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number; method?: 'none' | 'truncate' }
+  | { ts: number; type: 'L2'; sessionId: string; file: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number }
+  | { ts: number; type: 'L3'; sessionId: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number; verified: boolean }
   | { ts: number; type: 'error'; sessionId: string; layer: string; message: string };
 
 export interface SessionStats {

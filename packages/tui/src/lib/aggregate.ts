@@ -10,6 +10,13 @@ export interface CostBreakdown {
   costSaved: number;
 }
 
+function compressionTokens(ev: { inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number }): { input: number; compressed: number } {
+  return {
+    input: ev.inputTokens ?? ev.orig ?? 0,
+    compressed: ev.compressedInputTokens ?? ev.comp ?? 0,
+  };
+}
+
 function computeCost(
   totalOriginalInputTokens: number,
   totalInputTokens: number,
@@ -56,26 +63,29 @@ export function aggregateBySession(events: StatsEvent[], pricingMap: Map<string,
     } else if (ev.type === 'L1') {
       const s = sessions.get(ev.sessionId);
       if (s) {
+        const t = compressionTokens(ev);
         s.l1Count++;
-        s.totalOriginalInputTokens += ev.inputTokens;
-        s.totalInputTokens += ev.compressedInputTokens;
-        s.totalSaved += ev.inputTokens - ev.compressedInputTokens;
+        s.totalOriginalInputTokens += t.input;
+        s.totalInputTokens += t.compressed;
+        s.totalSaved += t.input - t.compressed;
       }
     } else if (ev.type === 'L2') {
       const s = sessions.get(ev.sessionId);
       if (s) {
+        const t = compressionTokens(ev);
         s.l2Count++;
-        s.totalOriginalInputTokens += ev.inputTokens;
-        s.totalInputTokens += ev.compressedInputTokens;
-        s.totalSaved += ev.inputTokens - ev.compressedInputTokens;
+        s.totalOriginalInputTokens += t.input;
+        s.totalInputTokens += t.compressed;
+        s.totalSaved += t.input - t.compressed;
       }
     } else if (ev.type === 'L3') {
       const s = sessions.get(ev.sessionId);
       if (s) {
+        const t = compressionTokens(ev);
         s.l3Count++;
-        s.totalOriginalInputTokens += ev.inputTokens;
-        s.totalInputTokens += ev.compressedInputTokens;
-        s.totalSaved += ev.inputTokens - ev.compressedInputTokens;
+        s.totalOriginalInputTokens += t.input;
+        s.totalInputTokens += t.compressed;
+        s.totalSaved += t.input - t.compressed;
       }
     } else if (ev.type === 'error') {
       const s = sessions.get(ev.sessionId);
@@ -149,10 +159,11 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
   const byLayerMap = new Map<'L1' | 'L2' | 'L3', { count: number; totalInputTokens: number; totalOutputTokens: number; totalSaved: number }>();
   for (const ev of events) {
     if (ev.type === 'L1' || ev.type === 'L2' || ev.type === 'L3') {
+      const t = compressionTokens(ev);
       const l = byLayerMap.get(ev.type) ?? { count: 0, totalInputTokens: 0, totalOutputTokens: 0, totalSaved: 0 };
       l.count++;
-      l.totalInputTokens += ev.inputTokens;
-      l.totalSaved += ev.inputTokens - ev.compressedInputTokens;
+      l.totalInputTokens += t.input;
+      l.totalSaved += t.input - t.compressed;
       byLayerMap.set(ev.type, l);
     }
   }

@@ -2,8 +2,8 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import type { ModelStats } from '../lib/types.js';
 
-const fmt = (n: number) => n.toLocaleString();
-const fmtPct = (r: number) => `${(r * 100).toFixed(0)}%`;
+const fmt = (n: number | undefined | null) => (n ?? 0).toLocaleString();
+const fmtPct = (r: number | undefined | null) => `${((r ?? 0) * 100).toFixed(0)}%`;
 
 export const Models = ({ byModel }: { byModel: ModelStats[] }) => {
   if (byModel.length === 0) {
