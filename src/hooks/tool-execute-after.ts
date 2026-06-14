@@ -41,7 +41,7 @@ export function createToolExecuteAfterHook() {
         const layer2Result = compressFileContent(filepath, layer1Result.compressed, state.config.layers.fileContent);
         finalOutput = layer2Result.compressed;
         if (layer2Result.method !== 'none') {
-          Logger.info(
+          Logger.debug(
             `L2 strip ${filepath} ${layer2Result.originalTokens}→${layer2Result.compressedTokens} tokens (${Math.round(layer2Result.ratio * 100)}%)`
           );
           getStatsEmitter()?.emit({
@@ -57,7 +57,7 @@ export function createToolExecuteAfterHook() {
       }
 
       if (layer1Result.method !== 'none') {
-        Logger.info(
+        Logger.debug(
           `L1 ${hookInput.tool} ${layer1Result.originalTokens}→${layer1Result.compressedTokens} tokens (${Math.round(layer1Result.ratio * 100)}%)`
         );
         getStatsEmitter()?.emit({

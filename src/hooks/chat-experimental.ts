@@ -99,7 +99,7 @@ export function createMessagesTransformHook(input: PluginInput) {
           },
           ...recent,
         ];
-        Logger.info(
+        Logger.debug(
           `L3 compressed ${old.length} messages → 1 summary (attempts=${result.attempts})`
         );
         const origChars = oldText.length;

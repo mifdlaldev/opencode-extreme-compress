@@ -24,9 +24,9 @@ const sessionModels = new Map<string, string>();
 const sessionStartTimes = new Map<string, number>();
 
 export const ExtremeCompressPlugin: Plugin = async (input) => {
-  Logger.info(`Loading extreme-compress plugin (config: ${configPath})`);
+  Logger.debug(`Loading extreme-compress plugin (config: ${configPath})`);
   const config = await loadConfig(configPath);
-  Logger.info(
+  Logger.debug(
     `Config loaded: mode=${config.mode}, profiles=${Object.keys(config.modelProfiles).length}`
   );
 
@@ -91,7 +91,7 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
           model: modelId,
           mode,
         });
-        Logger.info(
+        Logger.debug(
           `Session ${hookInput.sessionID.slice(0, 8)}… initialized: model=${modelId || 'unknown'} mode=${mode}`
         );
       }

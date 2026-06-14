@@ -1,6 +1,6 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
-let currentLevel: LogLevel = 'info';
+let currentLevel: LogLevel = 'warn';
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
@@ -18,25 +18,35 @@ export function getLogLevel(): LogLevel {
   return currentLevel;
 }
 
+function stderrLine(prefix: string, msg: string, args: unknown[]): void {
+  let line = `${prefix} ${msg}`;
+  if (args.length > 0) {
+    line += ' ' + args
+      .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
+      .join(' ');
+  }
+  process.stderr.write(line + '\n');
+}
+
 export const Logger = {
   debug(msg: string, ...args: unknown[]): void {
     if (LEVEL_PRIORITY[currentLevel] <= LEVEL_PRIORITY.debug) {
-      console.log(`[EXTREME-COMPRESS DEBUG] ${msg}`, ...args);
+      stderrLine('[EXTREME-COMPRESS DEBUG]', msg, args);
     }
   },
   info(msg: string, ...args: unknown[]): void {
     if (LEVEL_PRIORITY[currentLevel] <= LEVEL_PRIORITY.info) {
-      console.log(`[EXTREME-COMPRESS] ${msg}`, ...args);
+      stderrLine('[EXTREME-COMPRESS INFO]', msg, args);
     }
   },
   warn(msg: string, ...args: unknown[]): void {
     if (LEVEL_PRIORITY[currentLevel] <= LEVEL_PRIORITY.warn) {
-      console.warn(`[EXTREME-COMPRESS WARN] ${msg}`, ...args);
+      stderrLine('[EXTREME-COMPRESS WARN]', msg, args);
     }
   },
   error(msg: string, ...args: unknown[]): void {
     if (LEVEL_PRIORITY[currentLevel] <= LEVEL_PRIORITY.error) {
-      console.error(`[EXTREME-COMPRESS ERROR] ${msg}`, ...args);
+      stderrLine('[EXTREME-COMPRESS ERROR]', msg, args);
     }
   },
 };

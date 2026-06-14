@@ -2,60 +2,70 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Logger, setLogLevel, getLogLevel } from '../src/utils/logger';
 
 describe('logger', () => {
-  let originalConsoleLog: typeof console.log;
-  let originalConsoleWarn: typeof console.warn;
-  let originalConsoleError: typeof console.error;
-  let captured: { log: string[]; warn: string[]; error: string[] };
+  let originalStderrWrite: typeof process.stderr.write;
+  let captured: string[];
 
   beforeEach(() => {
-    captured = { log: [], warn: [], error: [] };
-    originalConsoleLog = console.log;
-    originalConsoleWarn = console.warn;
-    originalConsoleError = console.error;
-    console.log = (msg: string) => captured.log.push(msg);
-    console.warn = (msg: string) => captured.warn.push(msg);
-    console.error = (msg: string) => captured.error.push(msg);
+    captured = [];
+    originalStderrWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+      captured.push(typeof chunk === 'string' ? chunk : chunk.toString());
+      return true;
+    }) as typeof process.stderr.write;
   });
 
   afterEach(() => {
-    console.log = originalConsoleLog;
-    console.warn = originalConsoleWarn;
-    console.error = originalConsoleError;
-    setLogLevel('info'); // reset to default
+    process.stderr.write = originalStderrWrite;
+    setLogLevel('warn'); // reset to default
   });
 
-  test('info messages include prefix and message', () => {
+  test('default level is warn (info/debug suppressed)', () => {
+    expect(getLogLevel()).toBe('warn');
+    Logger.info('should not appear');
+    Logger.debug('should not appear either');
+    expect(captured.length).toBe(0);
+  });
+
+  test('info messages include prefix and message when level allows', () => {
     setLogLevel('info');
     Logger.info('test message');
-    expect(captured.log.length).toBe(1);
-    expect(captured.log[0]).toContain('[EXTREME-COMPRESS]');
-    expect(captured.log[0]).toContain('test message');
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('[EXTREME-COMPRESS INFO]');
+    expect(captured[0]).toContain('test message');
+  });
+
+  test('debug messages shown in debug mode', () => {
+    setLogLevel('debug');
+    Logger.debug('debug message');
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('[EXTREME-COMPRESS DEBUG]');
   });
 
   test('debug suppressed in info mode', () => {
     setLogLevel('info');
     Logger.debug('debug message');
-    expect(captured.log.length).toBe(0);
+    expect(captured.length).toBe(0);
   });
 
-  test('debug shown in debug mode', () => {
-    setLogLevel('debug');
+  test('debug suppressed in warn mode (default)', () => {
+    setLogLevel('warn');
     Logger.debug('debug message');
-    expect(captured.log.length).toBe(1);
+    Logger.info('info message');
+    expect(captured.length).toBe(0);
   });
 
-  test('warn shown in info mode', () => {
-    setLogLevel('info');
+  test('warn shown in warn mode (default)', () => {
     Logger.warn('warn message');
-    expect(captured.warn.length).toBe(1);
-    expect(captured.warn[0]).toContain('[EXTREME-COMPRESS WARN]');
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('[EXTREME-COMPRESS WARN]');
+    expect(captured[0]).toContain('warn message');
   });
 
-  test('error always shown', () => {
+  test('error always shown even in silent mode', () => {
     setLogLevel('silent');
     Logger.error('error message');
-    expect(captured.error.length).toBe(1);
-    expect(captured.error[0]).toContain('error message');
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('[EXTREME-COMPRESS ERROR]');
   });
 
   test('silent suppresses everything except error', () => {
@@ -64,20 +74,46 @@ describe('logger', () => {
     Logger.info('i');
     Logger.warn('w');
     Logger.error('e');
-    expect(captured.log.length).toBe(0);
-    expect(captured.warn.length).toBe(0);
-    expect(captured.error.length).toBe(1);
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('e');
   });
 
-  test('getLogLevel returns current level', () => {
-    setLogLevel('warn');
-    expect(getLogLevel()).toBe('warn');
+  test('writes to STDERR not STDOUT (UX: does not pollute TUI input)', () => {
+    // Capture stdout separately to confirm nothing leaks there
+    let stdoutCaptured = '';
+    const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      stdoutCaptured += typeof chunk === 'string' ? chunk : chunk.toString();
+      return true;
+    }) as typeof process.stdout.write;
+
+    try {
+      setLogLevel('debug');
+      Logger.debug('test');
+      Logger.info('test');
+      Logger.warn('test');
+      Logger.error('test');
+
+      // STDERR should have 4 entries
+      expect(captured.length).toBe(4);
+
+      // STDOUT should have NOTHING
+      expect(stdoutCaptured).toBe('');
+    } finally {
+      process.stdout.write = originalStdoutWrite;
+    }
   });
 
   test('Logger.info accepts additional args (forwarded)', () => {
     setLogLevel('info');
     Logger.info('with args', 'arg1', 42);
-    expect(captured.log.length).toBe(1);
-    // Args are forwarded to console
+    expect(captured.length).toBe(1);
+    expect(captured[0]).toContain('arg1');
+    expect(captured[0]).toContain('42');
+  });
+
+  test('getLogLevel returns current level', () => {
+    setLogLevel('error');
+    expect(getLogLevel()).toBe('error');
   });
 });
