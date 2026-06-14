@@ -24,7 +24,7 @@ describe('Integration tests', () => {
     };
 
     expect(resolveEffectiveMode(config as any, 'minimax-m3')).toBe('light');
-    expect(resolveEffectiveMode(config as any, 'deepseek-v4-flash-free')).toBe('medium');
+    expect(resolveEffectiveMode(config as any, 'deepseek-v4-flash-free')).toBe('light');
   });
 
   test('3. AGENTS.md-like content too small for compression', () => {
