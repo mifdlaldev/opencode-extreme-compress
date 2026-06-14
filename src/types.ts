@@ -88,14 +88,14 @@ export interface PluginConfig {
 export interface CompressionResult {
   original: string;
   compressed: string;
-  originalTokens: number;
-  compressedTokens: number;
+  inputTokens: number;
+  compressedInputTokens: number;
   /**
    * Reduction ratio: fraction of original tokens REMOVED.
    * - 0.0 = no reduction (compressed same size as original)
    * - 0.5 = 50% reduction (compressed is half the size)
    * - 1.0 = 100% reduction (compressed is empty)
-   * Example: originalTokens=1000, compressedTokens=250 → ratio=0.75 (75% reduction)
+   * Example: inputTokens=1000, compressedInputTokens=250 → ratio=0.75 (75% reduction)
    */
   ratio: number;
   method: 'none' | 'truncate' | 'strip' | 'summarize';

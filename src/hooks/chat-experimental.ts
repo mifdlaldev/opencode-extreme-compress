@@ -1,7 +1,7 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import { Logger } from '../utils/logger';
 import { shouldApplyLayer } from '../modes';
-import { getSessionTurnState } from './chat-message';
+import { getSessionTurnState, accumulateCompression } from './chat-message';
 import { getStatsEmitter } from '../stats-emitter-singleton';
 import { type SummarizerClient, summarizeWithRetry } from '../layers/layer3-semantic';
 
@@ -109,11 +109,12 @@ export function createMessagesTransformHook(input: PluginInput) {
           ts: Date.now() / 1000,
           type: 'L3',
           sessionId: sessionID,
-          orig: origChars,
-          comp: compChars,
+          inputTokens: origChars,
+          compressedInputTokens: compChars,
           ratio: l3Ratio,
           verified: result.verificationPassed,
         });
+        accumulateCompression(sessionID, origChars, compChars);
       } else {
         Logger.warn(`L3 fell back, keeping ${old.length} original messages`);
       }

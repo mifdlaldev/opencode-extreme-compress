@@ -8,6 +8,7 @@ import {
   createChatMessageHook,
   setSessionTurnState,
   clearSessionTurnState,
+  getSessionTotals,
 } from './hooks/chat-message';
 import {
   createMessagesTransformHook,
@@ -46,14 +47,19 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
         const props = eventInput.event?.properties as { sessionID?: string } | undefined;
         const sid = props?.sessionID;
         if (sid) {
+          const totals = getSessionTotals(sid);
           const startTs = sessionStartTimes.get(sid);
           const now = Date.now() / 1000;
-          if (startTs !== undefined) {
+          if (totals && (totals.totalInputTokens > 0 || totals.totalOutputTokens > 0 || totals.totalOriginalInputTokens > 0)) {
+            const durationMs = startTs !== undefined ? (now - startTs) * 1000 : 0;
             getStatsEmitter()?.emit({
               ts: now,
               type: 'session.end',
               sessionId: sid,
-              durationMs: (now - startTs) * 1000,
+              durationMs,
+              totalInputTokens: totals.totalInputTokens,
+              totalOriginalInputTokens: totals.totalOriginalInputTokens,
+              totalOutputTokens: totals.totalOutputTokens,
             });
           }
           clearSessionState(sid);
@@ -74,14 +80,21 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
         messageID?: string;
         variant?: string;
       },
-      output: { message: unknown; parts: unknown[] }
+      output: { message: { role?: string }; parts: { type: string; text?: string }[] }
     ): Promise<void> => {
       const modelId = hookInput.model?.modelID ?? '';
       const mode = resolveEffectiveMode(config, modelId);
 
       if (!sessionModels.has(hookInput.sessionID)) {
         setSessionState(hookInput.sessionID, { config, mode });
-        setSessionTurnState(hookInput.sessionID, { config, mode, turnCount: 0 });
+        setSessionTurnState(hookInput.sessionID, {
+          config,
+          mode,
+          turnCount: 0,
+          totalInputTokens: 0,
+          totalOriginalInputTokens: 0,
+          totalOutputTokens: 0,
+        });
         sessionModels.set(hookInput.sessionID, modelId);
         sessionStartTimes.set(hookInput.sessionID, Date.now() / 1000);
         getStatsEmitter()?.emit({

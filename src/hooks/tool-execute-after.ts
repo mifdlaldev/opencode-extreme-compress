@@ -3,6 +3,7 @@ import { compressToolOutput } from '../layers/layer1-tool-output';
 import { compressFileContent } from '../layers/layer2-file-content';
 import { shouldApplyLayer } from '../modes';
 import { getStatsEmitter } from '../stats-emitter-singleton';
+import { accumulateCompression } from './chat-message';
 import type { CompressionMode, PluginConfig } from '../types';
 
 interface SessionState {
@@ -43,33 +44,35 @@ export function createToolExecuteAfterHook() {
         finalOutput = layer2Result.compressed;
         if (layer2Result.method !== 'none') {
           Logger.debug(
-            `L2 strip ${filepath} ${layer2Result.originalTokens}→${layer2Result.compressedTokens} tokens (${Math.round(layer2Result.ratio * 100)}%)`
+            `L2 strip ${filepath} ${layer2Result.inputTokens}→${layer2Result.compressedInputTokens} tokens (${Math.round(layer2Result.ratio * 100)}%)`
           );
           getStatsEmitter()?.emit({
             ts: Date.now() / 1000,
             type: 'L2',
             sessionId: hookInput.sessionID,
             file: filepath,
-            orig: layer2Result.originalTokens,
-            comp: layer2Result.compressedTokens,
+            inputTokens: layer2Result.inputTokens,
+            compressedInputTokens: layer2Result.compressedInputTokens,
             ratio: layer2Result.ratio,
           });
+          accumulateCompression(hookInput.sessionID, layer2Result.inputTokens, layer2Result.compressedInputTokens);
         }
       }
 
       Logger.debug(
-        `L1 ${hookInput.tool} ${layer1Result.originalTokens}→${layer1Result.compressedTokens} tokens (${Math.round(layer1Result.ratio * 100)}%) [${layer1Result.method}]`
+        `L1 ${hookInput.tool} ${layer1Result.inputTokens}→${layer1Result.compressedInputTokens} tokens (${Math.round(layer1Result.ratio * 100)}%) [${layer1Result.method}]`
       );
       getStatsEmitter()?.emit({
         ts: Date.now() / 1000,
         type: 'L1',
         sessionId: hookInput.sessionID,
         tool: hookInput.tool,
-        orig: layer1Result.originalTokens,
-        comp: layer1Result.compressedTokens,
+        inputTokens: layer1Result.inputTokens,
+        compressedInputTokens: layer1Result.compressedInputTokens,
         ratio: layer1Result.ratio,
         method: layer1Result.method as 'none' | 'truncate',
       });
+      accumulateCompression(hookInput.sessionID, layer1Result.inputTokens, layer1Result.compressedInputTokens);
 
       if (layer1WasCompressed) {
         output.output = finalOutput;

@@ -82,8 +82,8 @@ function truncateByLines(
   return {
     original: input,
     compressed,
-    originalTokens,
-    compressedTokens,
+    inputTokens: originalTokens,
+    compressedInputTokens: compressedTokens,
     ratio,
     method: 'truncate',
     marker: `${lineMarker} ${generateCompressionMarker('L1', ratio, originalTokens, compressedTokens)}`,
@@ -122,8 +122,8 @@ function truncateByBytes(
   return {
     original: input,
     compressed: combined,
-    originalTokens,
-    compressedTokens,
+    inputTokens: originalTokens,
+    compressedInputTokens: compressedTokens,
     ratio,
     method: 'truncate',
     marker: generateCompressionMarker('L1', ratio, originalTokens, compressedTokens),
@@ -135,8 +135,8 @@ function createNoopResult(input: string): CompressionResult {
   return {
     original: input,
     compressed: input,
-    originalTokens: tokens,
-    compressedTokens: tokens,
+    inputTokens: tokens,
+    compressedInputTokens: tokens,
     ratio: 0,
     method: 'none',
   };

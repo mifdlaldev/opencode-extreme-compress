@@ -10,7 +10,7 @@ describe('Integration tests', () => {
     const input = Array.from({ length: 5000 }, (_, i) => `line ${i}`).join('\n');
     const result = compressToolOutput(input, 'bash', config.layers.toolOutput);
     expect(result.method).toBe('truncate');
-    expect(result.compressedTokens).toBeLessThan(result.originalTokens);
+    expect(result.compressedInputTokens).toBeLessThan(result.inputTokens);
   });
 
   test('2. mode change resolves correctly per model', () => {

@@ -92,21 +92,42 @@ export function compressFileContent(
 ): CompressionResult {
   if (!config.enabled) {
     const tokens = countTokens(content);
-    return { original: content, compressed: content, originalTokens: tokens, compressedTokens: tokens, ratio: 0, method: 'none' };
-  }
+  return {
+    original: content,
+    compressed: content,
+    inputTokens: tokens,
+    compressedInputTokens: tokens,
+    ratio: 0,
+    method: 'none',
+  };
+}
 
   const contentBytes = Buffer.byteLength(content, 'utf-8');
   if (!shouldStrip(filepath, contentBytes)) {
     const tokens = countTokens(content);
-    return { original: content, compressed: content, originalTokens: tokens, compressedTokens: tokens, ratio: 0, method: 'none' };
-  }
+  return {
+    original: content,
+    compressed: content,
+    inputTokens: tokens,
+    compressedInputTokens: tokens,
+    ratio: 0,
+    method: 'none',
+  };
+}
 
   // Skip template-heavy files (heuristic: > 10 backticks)
   const backtickCount = (content.match(/`/g) || []).length;
   if (backtickCount > 10) {
     const tokens = countTokens(content);
-    return { original: content, compressed: content, originalTokens: tokens, compressedTokens: tokens, ratio: 0, method: 'none' };
-  }
+  return {
+    original: content,
+    compressed: content,
+    inputTokens: tokens,
+    compressedInputTokens: tokens,
+    ratio: 0,
+    method: 'none',
+  };
+}
 
   const originalTokens = countTokens(content);
   const compressed = stripComments(content);
@@ -116,8 +137,8 @@ export function compressFileContent(
   return {
     original: content,
     compressed,
-    originalTokens,
-    compressedTokens,
+    inputTokens: originalTokens,
+    compressedInputTokens: compressedTokens,
     ratio,
     method: 'strip',
     marker: generateCompressionMarker('L2', ratio, originalTokens, compressedTokens),
