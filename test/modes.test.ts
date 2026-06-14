@@ -19,6 +19,7 @@ const baseConfig: PluginConfig = {
     semantic: { enabled: false, model: 'kimi-k2.6', trigger: { minMessages: 15, keepRecent: 4 }, maxSummaryTokens: 1500 },
   },
   excludeGlobs: [],
+  stats: { enabled: false, path: '/tmp/stats.jsonl', rotateMonthly: false },
 };
 
 describe('mode resolution', () => {

@@ -13,12 +13,15 @@ import {
   createMessagesTransformHook,
   createSessionCompactingHook,
 } from './hooks/chat-experimental';
+import { StatsEmitter } from './stats-emitter';
+import { setStatsEmitter, getStatsEmitter } from './stats-emitter-singleton';
 
 const configPath =
   process.env.EXTREME_COMPRESS_CONFIG ??
   `${process.env.HOME ?? ''}/.config/opencode/extreme-compress.jsonc`;
 
 const sessionModels = new Map<string, string>();
+const sessionStartTimes = new Map<string, number>();
 
 export const ExtremeCompressPlugin: Plugin = async (input) => {
   Logger.info(`Loading extreme-compress plugin (config: ${configPath})`);
@@ -26,6 +29,9 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
   Logger.info(
     `Config loaded: mode=${config.mode}, profiles=${Object.keys(config.modelProfiles).length}`
   );
+
+  const statsEmitter = new StatsEmitter(config.stats);
+  setStatsEmitter(statsEmitter);
 
   const toolBefore = createToolExecuteBeforeHook();
   const toolAfter = createToolExecuteAfterHook();
@@ -40,9 +46,20 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
         const props = eventInput.event?.properties as { sessionID?: string } | undefined;
         const sid = props?.sessionID;
         if (sid) {
+          const startTs = sessionStartTimes.get(sid);
+          const now = Date.now() / 1000;
+          if (startTs !== undefined) {
+            getStatsEmitter()?.emit({
+              ts: now,
+              type: 'session.end',
+              sessionId: sid,
+              durationMs: (now - startTs) * 1000,
+            });
+          }
           clearSessionState(sid);
           clearSessionTurnState(sid);
           sessionModels.delete(sid);
+          sessionStartTimes.delete(sid);
           Logger.debug(`Cleaned up session state for ${sid.slice(0, 8)}…`);
         }
       }
@@ -66,6 +83,14 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
         setSessionState(hookInput.sessionID, { config, mode });
         setSessionTurnState(hookInput.sessionID, { config, mode, turnCount: 0 });
         sessionModels.set(hookInput.sessionID, modelId);
+        sessionStartTimes.set(hookInput.sessionID, Date.now() / 1000);
+        getStatsEmitter()?.emit({
+          ts: Date.now() / 1000,
+          type: 'session.start',
+          sessionId: hookInput.sessionID,
+          model: modelId,
+          mode,
+        });
         Logger.info(
           `Session ${hookInput.sessionID.slice(0, 8)}… initialized: model=${modelId || 'unknown'} mode=${mode}`
         );

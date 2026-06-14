@@ -68,6 +68,12 @@ export interface TokenizerConfig {
   modelTokenizers: Record<string, string>;  // Map modelId → tokenizer strategy
 }
 
+export interface StatsConfig {
+  enabled: boolean;
+  path: string;
+  rotateMonthly: boolean;
+}
+
 export interface PluginConfig {
   mode: CompressionMode;
   modelProfiles: ModelProfiles;
@@ -77,6 +83,7 @@ export interface PluginConfig {
   antiHallucination: AntiHallucinationConfig;
   layers: LayersConfig;
   excludeGlobs: string[];  // Top-level file patterns to exclude from ALL compression
+  stats: StatsConfig;
 }
 
 export interface CompressionResult {

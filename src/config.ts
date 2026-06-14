@@ -69,6 +69,11 @@ export function getDefaultConfig(): PluginConfig {
       },
     },
     excludeGlobs: ['**/AGENTS.md', '**/DESIGN.md', '**/*.lock'],
+    stats: {
+      enabled: true,
+      path: '~/.config/opencode/extreme-compress-stats.jsonl',
+      rotateMonthly: true,
+    },
   };
 }
 

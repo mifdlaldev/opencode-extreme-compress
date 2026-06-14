@@ -63,5 +63,10 @@
       "maxSummaryTokens": 1500
     }
   },
-  "excludeGlobs": ["**/AGENTS.md", "**/DESIGN.md", "**/*.lock"]
+  "excludeGlobs": ["**/AGENTS.md", "**/DESIGN.md", "**/*.lock"],
+  "stats": {
+    "enabled": true,
+    "path": "~/.config/opencode/extreme-compress-stats.jsonl",
+    "rotateMonthly": true
+  }
 }

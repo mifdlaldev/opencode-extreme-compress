@@ -2,6 +2,7 @@ import { Logger } from '../utils/logger';
 import { compressToolOutput } from '../layers/layer1-tool-output';
 import { compressFileContent } from '../layers/layer2-file-content';
 import { shouldApplyLayer } from '../modes';
+import { getStatsEmitter } from '../stats-emitter-singleton';
 import type { CompressionMode, PluginConfig } from '../types';
 
 interface SessionState {
@@ -43,6 +44,15 @@ export function createToolExecuteAfterHook() {
           Logger.info(
             `L2 strip ${filepath} ${layer2Result.originalTokens}→${layer2Result.compressedTokens} tokens (${Math.round(layer2Result.ratio * 100)}%)`
           );
+          getStatsEmitter()?.emit({
+            ts: Date.now() / 1000,
+            type: 'L2',
+            sessionId: hookInput.sessionID,
+            file: filepath,
+            orig: layer2Result.originalTokens,
+            comp: layer2Result.compressedTokens,
+            ratio: layer2Result.ratio,
+          });
         }
       }
 
@@ -50,6 +60,15 @@ export function createToolExecuteAfterHook() {
         Logger.info(
           `L1 ${hookInput.tool} ${layer1Result.originalTokens}→${layer1Result.compressedTokens} tokens (${Math.round(layer1Result.ratio * 100)}%)`
         );
+        getStatsEmitter()?.emit({
+          ts: Date.now() / 1000,
+          type: 'L1',
+          sessionId: hookInput.sessionID,
+          tool: hookInput.tool,
+          orig: layer1Result.originalTokens,
+          comp: layer1Result.compressedTokens,
+          ratio: layer1Result.ratio,
+        });
         output.output = finalOutput;
       }
     } catch (error) {
