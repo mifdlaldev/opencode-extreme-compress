@@ -46,9 +46,9 @@ export function getDefaultConfig(): PluginConfig {
     layers: {
       toolOutput: {
         enabled: true,
-        headLines: 200,
-        tailLines: 50,
-        maxBytes: 102400,
+        headLines: 50,
+        tailLines: 20,
+        maxBytes: 20480,
         preservePatterns: [
           '(?i)(error|fail|exception|warning)',
           '\\b\\w+\\.ts:\\d+:',

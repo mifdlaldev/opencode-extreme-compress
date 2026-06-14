@@ -38,7 +38,7 @@ describe('StatsEmitter', () => {
     try {
       const emitter = new StatsEmitter({ enabled: true, path: path, rotateMonthly: false });
       for (let i = 0; i < 100; i++) {
-        emitter.emit({ ts: i, type: 'L1', sessionId: 's', tool: 'read', orig: 1000, comp: 500, ratio: 0.5 });
+        emitter.emit({ ts: i, type: 'L1', sessionId: 's', tool: 'read', orig: 1000, comp: 500, ratio: 0.5, method: 'truncate' });
       }
       await new Promise((r) => setTimeout(r, 500));
       const content = readFileSync(path, 'utf-8');
@@ -55,7 +55,7 @@ describe('StatsEmitter', () => {
   test('expands ~ to home directory', () => {
     const e = new StatsEmitter({ enabled: true, path: '~/test.jsonl', rotateMonthly: false });
     // private method but we can test via emit
-    e.emit({ ts: 1, type: 'L1', sessionId: 's', tool: 't', orig: 1, comp: 1, ratio: 0 });
+    e.emit({ ts: 1, type: 'L1', sessionId: 's', tool: 't', orig: 1, comp: 1, ratio: 0, method: 'none' });
     // The write will fail (no permission to ~/test.jsonl typically) but should not throw synchronously
   });
 });

@@ -66,7 +66,7 @@ describe('config loader', () => {
       expect(config.mode).toBe('extreme');
       // headLines overridden, tailLines preserved from defaults (deep merge)
       expect(config.layers.toolOutput.headLines).toBe(100);
-      expect(config.layers.toolOutput.tailLines).toBe(50);
+      expect(config.layers.toolOutput.tailLines).toBe(20);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

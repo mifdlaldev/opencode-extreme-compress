@@ -1,7 +1,7 @@
 export type StatsEvent =
   | { ts: number; type: 'session.start'; sessionId: string; model: string; mode: string }
   | { ts: number; type: 'session.end'; sessionId: string; durationMs: number }
-  | { ts: number; type: 'L1'; sessionId: string; tool: string; orig: number; comp: number; ratio: number }
+  | { ts: number; type: 'L1'; sessionId: string; tool: string; orig: number; comp: number; ratio: number; method: 'none' | 'truncate' }
   | { ts: number; type: 'L2'; sessionId: string; file: string; orig: number; comp: number; ratio: number }
   | { ts: number; type: 'L3'; sessionId: string; orig: number; comp: number; ratio: number; verified: boolean }
   | { ts: number; type: 'error'; sessionId: string; layer: string; message: string };

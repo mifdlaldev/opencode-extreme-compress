@@ -35,6 +35,7 @@ export function createToolExecuteAfterHook() {
 
       const layer1Result = compressToolOutput(originalOutput, hookInput.tool, state.config.layers.toolOutput);
       let finalOutput = layer1Result.compressed;
+      const layer1WasCompressed = layer1Result.method !== 'none';
 
       if (isRead && shouldApplyLayer(state.mode, 'fileContent')) {
         const filepath = (hookInput.args as { path?: string } | undefined)?.path ?? '';
@@ -56,23 +57,24 @@ export function createToolExecuteAfterHook() {
         }
       }
 
-      if (layer1Result.method !== 'none') {
-        Logger.debug(
-          `L1 ${hookInput.tool} ${layer1Result.originalTokens}→${layer1Result.compressedTokens} tokens (${Math.round(layer1Result.ratio * 100)}%)`
-        );
-        getStatsEmitter()?.emit({
-          ts: Date.now() / 1000,
-          type: 'L1',
-          sessionId: hookInput.sessionID,
-          tool: hookInput.tool,
-          orig: layer1Result.originalTokens,
-          comp: layer1Result.compressedTokens,
-          ratio: layer1Result.ratio,
-        });
+      Logger.debug(
+        `L1 ${hookInput.tool} ${layer1Result.originalTokens}→${layer1Result.compressedTokens} tokens (${Math.round(layer1Result.ratio * 100)}%) [${layer1Result.method}]`
+      );
+      getStatsEmitter()?.emit({
+        ts: Date.now() / 1000,
+        type: 'L1',
+        sessionId: hookInput.sessionID,
+        tool: hookInput.tool,
+        orig: layer1Result.originalTokens,
+        comp: layer1Result.compressedTokens,
+        ratio: layer1Result.ratio,
+        method: layer1Result.method as 'none' | 'truncate',
+      });
+
+      if (layer1WasCompressed) {
         output.output = finalOutput;
       }
     } catch (error) {
-      // Fail-safe: log and pass through unchanged
       Logger.error(`tool.execute.after failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
