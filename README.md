@@ -198,6 +198,50 @@ bun run build
 | `test/model-specific.test.ts` | 5 | Model-aware mode resolution |
 | **Total** | **131** | |
 
+## Repository Structure
+
+```
+opencode-extreme-compress/
+├── src/                    # Plugin source (TypeScript)
+├── test/                   # Plugin tests (140+ tests)
+├── packages/
+│   └── tui/                # Standalone monitoring TUI
+├── scripts/                # install.sh, uninstall.sh
+├── compress.default.jsonc  # Default config (mode: light)
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Monitoring (TUI)
+
+For real-time monitoring of compression activity, use the standalone TUI:
+
+```bash
+# From the repo
+cd packages/tui
+bun install
+bun run dev
+
+# Or after build
+bun run dist/cli.js
+```
+
+**Features**:
+
+- 📊 **Overview** — total stats, mode distribution, layer effectiveness
+- 🤖 **Models** — per-model breakdown (sessions, tokens, savings)
+- 📜 **Sessions** — list of recent sessions with stats
+- 🔴 **Live** — real-time tail of compression events (updates within 1 second)
+
+**Keyboard**: `1`/`2`/`3`/`4` to switch views, `Tab` to cycle, `q` (or `Ctrl+C`) to quit.
+
+**Data source**: `~/.config/opencode/extreme-compress-stats.jsonl` (written by plugin, read by TUI).
+
+**Custom stats path**: `bun run src/cli.tsx /path/to/your/stats.jsonl`
+
+The TUI is **read-only** and has **zero runtime cost** when not running. It's a separate process — open it in a second terminal to monitor opencode sessions in real-time.
+
 ## Known Limitations (v0.1.0)
 
 - **Layer 2 uses regex** for comment stripping (not tree-sitter AST). For 99% of code this is correct, but edge cases with template literals containing `//` are skipped. v0.2.0 will add tree-sitter.
