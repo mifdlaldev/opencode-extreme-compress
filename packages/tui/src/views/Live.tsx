@@ -7,18 +7,20 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString('en-US', { hour12: false });
 }
 
+const fmt = (n: number) => n.toLocaleString();
+
 function describeEvent(ev: StatsEvent): React.ReactElement {
   switch (ev.type) {
     case 'session.start':
       return <Text>session.start  <Text color="cyan">{ev.model}</Text>  mode=<Text color="yellow">{ev.mode}</Text></Text>;
     case 'session.end':
-      return <Text>session.end    duration=<Text color="cyan">{(ev.durationMs / 1000).toFixed(1)}s</Text></Text>;
+      return <Text>session.end    dur=<Text color="cyan">{(ev.durationMs / 1000).toFixed(1)}s</Text>  in=<Text color="green">{fmt(ev.totalInputTokens)}</Text>  out=<Text color="yellow">{fmt(ev.totalOutputTokens)}</Text>  saved=<Text color="cyan">{fmt(ev.totalOriginalInputTokens - ev.totalInputTokens)}</Text></Text>;
     case 'L1':
-      return <Text><Text color="green">L1</Text> {ev.tool.padEnd(8)} orig=<Text color="yellow">{ev.orig}</Text>  comp=<Text color="green">{ev.comp}</Text>  ratio=<Text color="cyan">{(ev.ratio * 100).toFixed(0)}%</Text></Text>;
+      return <Text><Text color="green">L1</Text> {ev.tool.padEnd(8)} in=<Text color="yellow">{fmt(ev.inputTokens)}</Text>  out=<Text color="green">{fmt(ev.compressedInputTokens)}</Text>  ratio=<Text color="cyan">{(ev.ratio * 100).toFixed(0)}%</Text>  {ev.method === 'truncate' ? <Text color="green">[truncate]</Text> : <Text dimColor>[none]</Text>}</Text>;
     case 'L2':
-      return <Text><Text color="green">L2</Text> {ev.file.slice(-20).padEnd(20)} orig=<Text color="yellow">{ev.orig}</Text>  comp=<Text color="green">{ev.comp}</Text></Text>;
+      return <Text><Text color="green">L2</Text> {ev.file.slice(-20).padEnd(20)} in=<Text color="yellow">{fmt(ev.inputTokens)}</Text>  out=<Text color="green">{fmt(ev.compressedInputTokens)}</Text></Text>;
     case 'L3':
-      return <Text><Text color="green">L3</Text> summar  orig=<Text color="yellow">{ev.orig}</Text>  comp=<Text color="green">{ev.comp}</Text>  ratio=<Text color="cyan">{(ev.ratio * 100).toFixed(0)}%</Text>  {ev.verified ? <Text color="green">✓</Text> : <Text color="red">✗</Text>}</Text>;
+      return <Text><Text color="green">L3</Text> summar  in=<Text color="yellow">{fmt(ev.inputTokens)}</Text>  out=<Text color="green">{fmt(ev.compressedInputTokens)}</Text>  ratio=<Text color="cyan">{(ev.ratio * 100).toFixed(0)}%</Text>  {ev.verified ? <Text color="green">✓</Text> : <Text color="red">✗</Text>}</Text>;
     case 'error':
       return <Text><Text color="red">error</Text>  {ev.layer}  {ev.message.slice(0, 50)}</Text>;
   }

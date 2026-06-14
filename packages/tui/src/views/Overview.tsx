@@ -2,8 +2,10 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import type { OverallStats } from '../lib/types.js';
 
+const fmt = (n: number) => n.toLocaleString();
+
 export const Overview = ({ stats }: { stats: OverallStats }) => {
-  const totalSavedPct = stats.totalOrig > 0 ? (stats.avgRatio * 100).toFixed(1) : '0';
+  const totalSavedPct = stats.totalOriginalInputTokens > 0 ? (stats.avgRatio * 100).toFixed(1) : '0';
   const maxModeSessions = Math.max(...stats.byMode.map(m => m.sessions), 1);
   const maxLayerSaved = Math.max(...stats.byLayer.map(l => l.totalSaved), 1);
 
@@ -15,10 +17,16 @@ export const Overview = ({ stats }: { stats: OverallStats }) => {
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text>Sessions: </Text>
-        <Text bold color="cyan">{stats.totalSessions.toLocaleString()}</Text>
-        <Text>    Tokens saved: </Text>
-        <Text bold color="green">{stats.totalSaved.toLocaleString()}</Text>
-        <Text> ({totalSavedPct}% of {stats.totalOrig.toLocaleString()})</Text>
+        <Text bold color="cyan">{fmt(stats.totalSessions)}</Text>
+        <Text>    Input saved: </Text>
+        <Text bold color="green">{fmt(stats.totalSaved)}</Text>
+        <Text> of {fmt(stats.totalOriginalInputTokens)} ({totalSavedPct}%)</Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text>Output: </Text>
+        <Text bold color="yellow">{fmt(stats.totalOutputTokens)}</Text>
+        <Text dimColor> tokens (estimated from model responses)</Text>
       </Box>
 
       <Box flexDirection="column" marginBottom={1}>
@@ -36,7 +44,7 @@ export const Overview = ({ stats }: { stats: OverallStats }) => {
       </Box>
 
       <Box flexDirection="column">
-        <Text bold>Layer effectiveness:</Text>
+        <Text bold>Layer effectiveness (by tokens saved):</Text>
         {stats.byLayer.map(l => {
           const barLen = Math.max(1, Math.floor((l.totalSaved / maxLayerSaved) * 20));
           const bar = '█'.repeat(barLen);

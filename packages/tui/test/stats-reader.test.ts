@@ -8,7 +8,7 @@ describe('readStatsFile', () => {
     const tmp = mkdtempSync(join('/tmp', 'sr-'));
     const path = join(tmp, 's.jsonl');
     try {
-      writeFileSync(path, '{"ts":1,"type":"session.start","sessionId":"s1","model":"m","mode":"light"}\n{"ts":2,"type":"L1","sessionId":"s1","tool":"read","orig":100,"comp":50,"ratio":0.5}\n');
+      writeFileSync(path, '{"ts":1,"type":"session.start","sessionId":"s1","model":"m","mode":"light"}\n{"ts":2,"type":"L1","sessionId":"s1","tool":"read","inputTokens":100,"compressedInputTokens":50,"ratio":0.5,"method":"truncate"}\n');
       const events = await readStatsFile(path);
       expect(events.length).toBe(2);
       expect(events[0].type).toBe('session.start');
@@ -20,7 +20,7 @@ describe('readStatsFile', () => {
     const tmp = mkdtempSync(join('/tmp', 'sr-'));
     const path = join(tmp, 's.jsonl');
     try {
-      writeFileSync(path, '{"ts":1,"type":"session.start","sessionId":"s1","model":"m","mode":"light"}\nNOT JSON\n{"ts":2,"type":"L1","sessionId":"s1","tool":"read","orig":100,"comp":50,"ratio":0.5}\n');
+      writeFileSync(path, '{"ts":1,"type":"session.start","sessionId":"s1","model":"m","mode":"light"}\nNOT JSON\n{"ts":2,"type":"L1","sessionId":"s1","tool":"read","inputTokens":100,"compressedInputTokens":50,"ratio":0.5,"method":"truncate"}\n');
       const events = await readStatsFile(path);
       expect(events.length).toBe(2);
     } finally { rmSync(tmp, { recursive: true, force: true }); }

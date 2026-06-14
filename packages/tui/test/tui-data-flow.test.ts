@@ -59,7 +59,7 @@ describe('TUI data flow regression (no sessions shown bug)', () => {
     writeFileSync(
       statsPath,
       '{"ts":100,"type":"session.start","sessionId":"existing","model":"m","mode":"light"}\n' +
-        '{"ts":101,"type":"L1","sessionId":"existing","tool":"read","orig":1000,"comp":200,"ratio":0.8}\n'
+        '{"ts":101,"type":"L1","sessionId":"existing","tool":"read","inputTokens":1000,"compressedInputTokens":200,"ratio":0.8,"method":"truncate"}\n'
     );
 
     const tailer = new StatsTailer(statsPath);
@@ -96,7 +96,7 @@ describe('TUI data flow regression (no sessions shown bug)', () => {
     appendFileSync(
       statsPath,
       '{"ts":100,"type":"session.start","sessionId":"e2e","model":"minimax-m3","mode":"light"}\n' +
-        '{"ts":101,"type":"L1","sessionId":"e2e","tool":"read","orig":5000,"comp":1200,"ratio":0.76}\n'
+        '{"ts":101,"type":"L1","sessionId":"e2e","tool":"read","inputTokens":5000,"compressedInputTokens":1200,"ratio":0.76,"method":"truncate"}\n'
     );
 
     // Wait for tailer to catch up
@@ -127,7 +127,7 @@ describe('TUI data flow regression (no sessions shown bug)', () => {
     for (let i = 0; i < 50; i++) {
       appendFileSync(
         statsPath,
-        `{"ts":${100 + i},"type":"L1","sessionId":"burst","tool":"read","orig":1000,"comp":500,"ratio":0.5}\n`
+        `{"ts":${100 + i},"type":"L1","sessionId":"burst","tool":"read","inputTokens":1000,"compressedInputTokens":500,"ratio":0.5,"method":"truncate"}\n`
       );
     }
 
