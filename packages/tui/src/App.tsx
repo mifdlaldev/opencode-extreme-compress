@@ -11,6 +11,7 @@ interface AppProps {
   sessions: SessionStats[];
   liveEvents: StatsEvent[];
   statsPath: string;
+  onRefresh?: () => void;
 }
 
 type View = 'overview' | 'models' | 'sessions' | 'live';
@@ -24,7 +25,7 @@ function prevView(v: View): View {
   return VIEWS[(VIEWS.indexOf(v) - 1 + VIEWS.length) % VIEWS.length];
 }
 
-export const App = ({ overall, sessions, liveEvents, statsPath }: AppProps) => {
+export const App = ({ overall, sessions, liveEvents, statsPath, onRefresh }: AppProps) => {
   const [view, setView] = useState<View>('overview');
 
   useInput((input, key) => {
@@ -34,6 +35,7 @@ export const App = ({ overall, sessions, liveEvents, statsPath }: AppProps) => {
     else if (input === '4') setView('live');
     else if (key.tab && !key.shift) setView(nextView(view));
     else if (key.shift && key.tab) setView(prevView(view));
+    else if (input === 'r' && onRefresh) onRefresh();
   });
 
   return (
@@ -50,6 +52,8 @@ export const App = ({ overall, sessions, liveEvents, statsPath }: AppProps) => {
         <Text color={view === 'live' ? 'green' : undefined}>[4]Live</Text>
         <Text dimColor>  │  </Text>
         <Text dimColor>{statsPath}</Text>
+        <Text dimColor>  │  </Text>
+        <Text dimColor>[r]efresh</Text>
       </Box>
       <Box flexDirection="column" paddingX={1} paddingY={1}>
         {view === 'overview' && <Overview stats={overall} />}
