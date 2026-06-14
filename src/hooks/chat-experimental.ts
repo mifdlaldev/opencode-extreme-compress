@@ -1,9 +1,48 @@
+import type { PluginInput } from '@opencode-ai/plugin';
 import { Logger } from '../utils/logger';
 import { shouldApplyLayer } from '../modes';
 import { getSessionTurnState } from './chat-message';
 import { type SummarizerClient, summarizeWithRetry } from '../layers/layer3-semantic';
 
-export function createMessagesTransformHook() {
+/**
+ * Wire the opencode SDK client to a SummarizerClient for Layer 3.
+ *
+ * Uses client.session.prompt to call the configured model. The result is
+ * extracted from the response parts. If the SDK call fails, throws — the
+ * surrounding summarizeWithRetry handles retries and fall-back.
+ */
+function buildSdkSummarizerClient(input: PluginInput, model: string, variant?: string): SummarizerClient {
+  return {
+    prompt: async (opts) => {
+      const sessionID = 'plugin-summarizer';
+      try {
+        const response = await input.client.session.prompt({
+          path: { id: sessionID },
+          body: {
+            parts: [{ type: 'text' as const, text: opts.prompt }],
+            model: { providerID: 'opencode', modelID: opts.model ?? model },
+            ...(opts.variant ? { variant: opts.variant } : {}),
+            ...(variant && !opts.variant ? { variant } : {}),
+          },
+        });
+
+        // Extract text from response parts.
+        const parts = (response as { parts?: { type: string; text?: string }[] }).parts ?? [];
+        const text = parts
+          .filter((p) => p.type === 'text')
+          .map((p) => p.text ?? '')
+          .join('\n');
+        return text;
+      } catch (err) {
+        throw new Error(
+          `SDK summarizer call failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    },
+  };
+}
+
+export function createMessagesTransformHook(input: PluginInput) {
   return async (
     _hookInput: Record<string, never>,
     output: { messages: { info: { sessionID?: string; role?: string }; parts: { type: string; text?: string }[] }[] }
@@ -34,16 +73,16 @@ export function createMessagesTransformHook() {
         })
         .join('\n\n');
 
-      // Note: real impl would use input.client to call LLM. For v1 we use a stub
-      // that returns the original (effectively a no-op when no client is wired).
-      const stubClient: SummarizerClient = {
-        prompt: async () => oldText, // v1 stub: just return original
-      };
+      const client = buildSdkSummarizerClient(
+        input,
+        state.config.layers.semantic.model,
+        state.config.layers.semantic.variant
+      );
 
-      const result = await summarizeWithRetry(oldText, stubClient, {
+      const result = await summarizeWithRetry(oldText, client, {
         model: state.config.layers.semantic.model,
         variant: state.config.layers.semantic.variant,
-        maxRetries: 1,
+        maxRetries: 2,
       });
 
       if (result.summary && !result.fellBack) {
@@ -59,12 +98,16 @@ export function createMessagesTransformHook() {
           },
           ...recent,
         ];
-        Logger.info(`L3 compressed ${old.length} messages → 1 summary (attempts=${result.attempts})`);
+        Logger.info(
+          `L3 compressed ${old.length} messages → 1 summary (attempts=${result.attempts})`
+        );
       } else {
         Logger.warn(`L3 fell back, keeping ${old.length} original messages`);
       }
     } catch (error) {
-      Logger.error(`messages.transform failed: ${error instanceof Error ? error.message : String(error)}`);
+      Logger.error(
+        `messages.transform failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 }
