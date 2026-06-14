@@ -11,7 +11,7 @@ import { type SummarizerClient, summarizeWithRetry } from '../layers/layer3-sema
  * extracted from the response parts. If the SDK call fails, throws — the
  * surrounding summarizeWithRetry handles retries and fall-back.
  */
-function buildSdkSummarizerClient(input: PluginInput, model: string, variant?: string): SummarizerClient {
+export function buildSdkSummarizerClient(input: PluginInput, model: string, variant?: string): SummarizerClient {
   return {
     prompt: async (opts) => {
       const sessionID = 'plugin-summarizer';
