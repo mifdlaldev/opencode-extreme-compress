@@ -35,19 +35,53 @@ function computeCost(
   return { costInput, costInputOriginal, costOutput, costTotal, costTotalOriginal, costSaved };
 }
 
+function newSessionEntry(
+  sessionId: string,
+  model: string,
+  mode: string,
+  startTs: number,
+  pricing: Pricing | undefined
+): SessionStats {
+  return {
+    sessionId, model, mode, startTs,
+    l1Count: 0, l2Count: 0, l3Count: 0,
+    totalOriginalInputTokens: 0, totalInputTokens: 0, totalOutputTokens: 0,
+    totalSaved: 0, errorCount: 0,
+    costInput: 0, costInputOriginal: 0, costOutput: 0, costTotal: 0, costTotalOriginal: 0, costSaved: 0,
+    pricing,
+  };
+}
+
+function getOrCreateSession(
+  sessions: Map<string, SessionStats>,
+  sessionId: string,
+  pricingMap: Map<string, Pricing>
+): SessionStats {
+  let s = sessions.get(sessionId);
+  if (!s) {
+    s = newSessionEntry(sessionId, 'unknown', 'unknown', 0, findPricing('unknown', pricingMap));
+    sessions.set(sessionId, s);
+  }
+  return s;
+}
+
 export function aggregateBySession(events: StatsEvent[], pricingMap: Map<string, Pricing>): Map<string, SessionStats> {
   const sessions = new Map<string, SessionStats>();
   for (const ev of events) {
     if (ev.type === 'session.start') {
+      // Do NOT reset running totals on duplicate session.start (plugin reload
+      // re-emits start for already-seen sessions; the previous in-memory
+      // sessionModels Map is gone, but L1/L2/L3 sums must persist).
       const pricing = findPricing(ev.model, pricingMap);
-      sessions.set(ev.sessionId, {
-        sessionId: ev.sessionId, model: ev.model, mode: ev.mode, startTs: ev.ts,
-        l1Count: 0, l2Count: 0, l3Count: 0,
-        totalOriginalInputTokens: 0, totalInputTokens: 0, totalOutputTokens: 0,
-        totalSaved: 0, errorCount: 0,
-        costInput: 0, costInputOriginal: 0, costOutput: 0, costTotal: 0, costTotalOriginal: 0, costSaved: 0,
-        pricing,
-      });
+      const existing = sessions.get(ev.sessionId);
+      if (existing) {
+        existing.model = ev.model;
+        existing.mode = ev.mode;
+        existing.startTs = Math.min(existing.startTs, ev.ts);
+        existing.pricing = pricing ?? existing.pricing;
+      } else {
+        sessions.set(ev.sessionId, newSessionEntry(ev.sessionId, ev.model, ev.mode, ev.ts, pricing));
+      }
     } else if (ev.type === 'session.end') {
       const s = sessions.get(ev.sessionId);
       if (s) {
@@ -65,32 +99,26 @@ export function aggregateBySession(events: StatsEvent[], pricingMap: Map<string,
         Object.assign(s, costs);
       }
     } else if (ev.type === 'L1') {
-      const s = sessions.get(ev.sessionId);
-      if (s) {
-        const t = compressionTokens(ev);
-        s.l1Count++;
-        s.totalOriginalInputTokens += t.input;
-        s.totalInputTokens += t.compressed;
-        s.totalSaved += t.input - t.compressed;
-      }
+      const s = getOrCreateSession(sessions, ev.sessionId, pricingMap);
+      const t = compressionTokens(ev);
+      s.l1Count++;
+      s.totalOriginalInputTokens += t.input;
+      s.totalInputTokens += t.compressed;
+      s.totalSaved += t.input - t.compressed;
     } else if (ev.type === 'L2') {
-      const s = sessions.get(ev.sessionId);
-      if (s) {
-        const t = compressionTokens(ev);
-        s.l2Count++;
-        s.totalOriginalInputTokens += t.input;
-        s.totalInputTokens += t.compressed;
-        s.totalSaved += t.input - t.compressed;
-      }
+      const s = getOrCreateSession(sessions, ev.sessionId, pricingMap);
+      const t = compressionTokens(ev);
+      s.l2Count++;
+      s.totalOriginalInputTokens += t.input;
+      s.totalInputTokens += t.compressed;
+      s.totalSaved += t.input - t.compressed;
     } else if (ev.type === 'L3') {
-      const s = sessions.get(ev.sessionId);
-      if (s) {
-        const t = compressionTokens(ev);
-        s.l3Count++;
-        s.totalOriginalInputTokens += t.input;
-        s.totalInputTokens += t.compressed;
-        s.totalSaved += t.input - t.compressed;
-      }
+      const s = getOrCreateSession(sessions, ev.sessionId, pricingMap);
+      const t = compressionTokens(ev);
+      s.l3Count++;
+      s.totalOriginalInputTokens += t.input;
+      s.totalInputTokens += t.compressed;
+      s.totalSaved += t.input - t.compressed;
     } else if (ev.type === 'error') {
       const s = sessions.get(ev.sessionId);
       if (s) s.errorCount++;

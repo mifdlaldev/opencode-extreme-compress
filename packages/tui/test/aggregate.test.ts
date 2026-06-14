@@ -159,3 +159,33 @@ describe('aggregateBySession defensive handling', () => {
     expect(r.totalOutputTokens).toBe(500);
   });
 });
+
+describe('aggregateBySession with duplicate session.start', () => {
+  test('duplicate session.start does not reset running totals', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'minimax-m3', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'L1', sessionId: 's1', tool: 'bash', inputTokens: 500, compressedInputTokens: 100, ratio: 0.8, method: 'truncate' },
+      { ts: 4, type: 'session.start', sessionId: 's1', model: 'minimax-m3', mode: 'medium' },
+      { ts: 5, type: 'L1', sessionId: 's1', tool: 'grep', inputTokens: 300, compressedInputTokens: 50, ratio: 0.83, method: 'truncate' },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.totalOriginalInputTokens).toBe(1800);
+    expect(r.totalInputTokens).toBe(350);
+    expect(r.totalSaved).toBe(1450);
+    expect(r.totalSessions).toBe(1);
+  });
+
+  test('orphan L1 events (no session.start) auto-create session', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 2, type: 'session.start', sessionId: 's2', model: 'm', mode: 'light' },
+      { ts: 3, type: 'L1', sessionId: 's2', tool: 'read', inputTokens: 500, compressedInputTokens: 100, ratio: 0.8, method: 'truncate' },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.totalSessions).toBe(2);
+    expect(r.totalOriginalInputTokens).toBe(1500);
+    expect(r.totalInputTokens).toBe(300);
+    expect(r.totalSaved).toBe(1200);
+  });
+});
