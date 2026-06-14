@@ -90,7 +90,7 @@ Plus: tool inputs are **NEVER** modified (per anti-hallucination charter princip
 
 ```bash
 # 1. Clone
-git clone https://github.com/YOUR_USERNAME/opencode-extreme-compress.git
+git clone https://github.com/mifdlaldev/opencode-extreme-compress.git
 cd opencode-extreme-compress
 
 # 2. Build

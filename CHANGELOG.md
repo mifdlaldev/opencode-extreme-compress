@@ -47,4 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reference-based compression (Layer 4) is not implemented; targeted for v0.3.0
 - Compression ratios are measured in unit tests only; real-session benchmarks pending
 
-[0.1.0]: https://github.com/YOUR_USERNAME/opencode-extreme-compress/releases/tag/v0.1.0
+[0.1.0]: https://github.com/mifdlaldev/opencode-extreme-compress/releases/tag/v0.1.0
