@@ -48,4 +48,29 @@ describe('TUI end-to-end with realistic stats (v0.3.0 schema)', () => {
       rmSync(tmp, { recursive: true, force: true });
     }
   });
+
+  test('handles stats file with old session.end (no totals) + L1 events', async () => {
+    const tmp = mkdtempSync(join('/tmp', 'tui-e2e-'));
+    const path = join(tmp, 's.jsonl');
+    try {
+      writeFileSync(path,
+        '{"ts":1,"type":"session.start","sessionId":"s1","model":"minimax-m3","mode":"light"}\n' +
+        '{"ts":2,"type":"L1","sessionId":"s1","tool":"read","orig":1000,"comp":200,"ratio":0.8,"method":"truncate"}\n' +
+        '{"ts":3,"type":"session.end","sessionId":"s1","durationMs":5000}\n' +
+        '{"ts":4,"type":"session.start","sessionId":"s2","model":"kimi-k2.6","mode":"medium"}\n' +
+        '{"ts":5,"type":"L1","sessionId":"s2","tool":"read","inputTokens":500,"compressedInputTokens":100,"ratio":0.8,"method":"truncate"}\n'
+      );
+
+      const events = await readStatsFile(path);
+      const stats = aggregateOverall(events, new Map());
+      expect(stats.totalSessions).toBe(2);
+      expect(stats.totalOriginalInputTokens).toBe(1500);
+      expect(stats.totalInputTokens).toBe(300);
+      expect(stats.totalSaved).toBe(1200);
+      const l1Layer = stats.byLayer.find(l => l.layer === 'L1');
+      expect(l1Layer?.totalSaved).toBe(1200);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

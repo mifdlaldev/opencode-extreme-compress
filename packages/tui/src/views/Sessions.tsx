@@ -30,12 +30,13 @@ export const Sessions = ({ sessions }: { sessions: SessionStats[] }) => {
         <Text bold>{'Model'.padEnd(18)}</Text>
         <Text bold>{'Mode'.padEnd(8)}</Text>
         <Text bold>{'Duration'.padStart(10)}</Text>
-        <Text bold>{'Input'.padStart(10)}</Text>
-        <Text bold>{'Output'.padStart(10)}</Text>
+        <Text bold>{'Orig'.padStart(10)}</Text>
+        <Text bold>{'Sent'.padStart(10)}</Text>
         <Text bold>{'Saved'.padStart(10)}</Text>
+        <Text bold>{'Output'.padStart(10)}</Text>
         <Text bold>{'Cost $'.padStart(12)}</Text>
       </Box>
-      <Text>{'─'.repeat(96)}</Text>
+      <Text>{'─'.repeat(112)}</Text>
       {last30.map(s => {
         const cost = s.pricing ? `$${s.costTotal.toFixed(4)}` : 'n/a';
         const costColor = s.pricing ? 'green' : undefined;
@@ -45,9 +46,10 @@ export const Sessions = ({ sessions }: { sessions: SessionStats[] }) => {
             <Text>{s.model.slice(0, 16).padEnd(18)}</Text>
             <Text>{s.mode.padEnd(8)}</Text>
             <Text>{formatDuration(s.durationMs).padStart(10)}</Text>
+            <Text>{fmt(s.totalOriginalInputTokens).padStart(10)}</Text>
             <Text color="green">{fmt(s.totalInputTokens).padStart(10)}</Text>
-            <Text color="yellow">{fmt(s.totalOutputTokens).padStart(10)}</Text>
             <Text color="cyan">{fmt(s.totalSaved).padStart(10)}</Text>
+            <Text color="yellow">{fmt(s.totalOutputTokens).padStart(10)}</Text>
             <Text color={costColor}>{cost.padStart(12)}</Text>
           </Box>
         );

@@ -53,11 +53,15 @@ export function aggregateBySession(events: StatsEvent[], pricingMap: Map<string,
       if (s) {
         s.endTs = ev.ts;
         s.durationMs = ev.durationMs;
-        s.totalInputTokens = ev.totalInputTokens;
-        s.totalOriginalInputTokens = ev.totalOriginalInputTokens;
-        s.totalOutputTokens = ev.totalOutputTokens;
-        s.totalSaved = ev.totalOriginalInputTokens - ev.totalInputTokens;
-        const costs = computeCost(s.totalOriginalInputTokens, s.totalInputTokens, s.totalOutputTokens, s.pricing);
+        if (typeof ev.totalOutputTokens === 'number') {
+          s.totalOutputTokens = Math.max(s.totalOutputTokens, ev.totalOutputTokens);
+        }
+        const costs = computeCost(
+          s.totalOriginalInputTokens,
+          s.totalInputTokens,
+          s.totalOutputTokens,
+          s.pricing
+        );
         Object.assign(s, costs);
       }
     } else if (ev.type === 'L1') {

@@ -2,18 +2,23 @@ import type { Plugin } from '@opencode-ai/plugin';
 import { loadConfig } from './config';
 import { resolveEffectiveMode } from './modes';
 import { Logger } from './utils/logger';
-import { createToolExecuteBeforeHook } from './hooks/tool-execute-before';
-import { createToolExecuteAfterHook, setSessionState, clearSessionState } from './hooks/tool-execute-after';
+import {
+  createToolExecuteBeforeHook,
+} from './hooks/tool-execute-before';
+import {
+  createToolExecuteAfterHook,
+  setSessionState,
+  getSessionState,
+} from './hooks/tool-execute-after';
 import {
   createChatMessageHook,
   setSessionTurnState,
-  clearSessionTurnState,
-  getSessionTotals,
 } from './hooks/chat-message';
 import {
   createMessagesTransformHook,
   createSessionCompactingHook,
 } from './hooks/chat-experimental';
+import { createEventHook } from './hooks/event-hook';
 import { StatsEmitter } from './stats-emitter';
 import { setStatsEmitter, getStatsEmitter } from './stats-emitter-singleton';
 
@@ -39,37 +44,10 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
   const chatMsg = createChatMessageHook();
   const messagesTransform = createMessagesTransformHook(input);
   const sessionCompacting = createSessionCompactingHook();
+  const eventHook = createEventHook(getSessionState, sessionStartTimes, sessionModels);
 
   return {
-    event: async (eventInput: { event: { type: string; properties?: unknown } }) => {
-      const t = eventInput.event?.type;
-      if (t === 'session.deleted' || t === 'session.compacted') {
-        const props = eventInput.event?.properties as { sessionID?: string } | undefined;
-        const sid = props?.sessionID;
-        if (sid) {
-          const totals = getSessionTotals(sid);
-          const startTs = sessionStartTimes.get(sid);
-          const now = Date.now() / 1000;
-          if (totals && (totals.totalInputTokens > 0 || totals.totalOutputTokens > 0 || totals.totalOriginalInputTokens > 0)) {
-            const durationMs = startTs !== undefined ? (now - startTs) * 1000 : 0;
-            getStatsEmitter()?.emit({
-              ts: now,
-              type: 'session.end',
-              sessionId: sid,
-              durationMs,
-              totalInputTokens: totals.totalInputTokens,
-              totalOriginalInputTokens: totals.totalOriginalInputTokens,
-              totalOutputTokens: totals.totalOutputTokens,
-            });
-          }
-          clearSessionState(sid);
-          clearSessionTurnState(sid);
-          sessionModels.delete(sid);
-          sessionStartTimes.delete(sid);
-          Logger.debug(`Cleaned up session state for ${sid.slice(0, 8)}…`);
-        }
-      }
-    },
+    event: eventHook,
     'tool.execute.before': toolBefore,
     'tool.execute.after': toolAfter,
     'chat.message': async (

@@ -6,7 +6,7 @@ import { getStatsEmitter } from '../stats-emitter-singleton';
 import { accumulateCompression } from './chat-message';
 import type { CompressionMode, PluginConfig } from '../types';
 
-interface SessionState {
+export interface SessionState {
   config: PluginConfig;
   mode: CompressionMode;
 }
@@ -15,6 +15,10 @@ const sessionStates = new Map<string, SessionState>();
 
 export function setSessionState(sessionID: string, state: SessionState): void {
   sessionStates.set(sessionID, state);
+}
+
+export function getSessionState(sessionID: string): SessionState | undefined {
+  return sessionStates.get(sessionID);
 }
 
 export function clearSessionState(sessionID: string): void {

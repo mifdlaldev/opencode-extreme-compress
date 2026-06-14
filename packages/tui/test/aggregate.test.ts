@@ -54,13 +54,14 @@ describe('aggregateOverall', () => {
   test('handles session.end with totals', () => {
     const events: StatsEvent[] = [
       { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
       { ts: 100, type: 'session.end', sessionId: 's1', durationMs: 5000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50 },
     ];
     const r = aggregateOverall(events, emptyPricing);
-    expect(r.totalInputTokens).toBe(100);
-    expect(r.totalOriginalInputTokens).toBe(200);
+    expect(r.totalInputTokens).toBe(200);
+    expect(r.totalOriginalInputTokens).toBe(1000);
     expect(r.totalOutputTokens).toBe(50);
-    expect(r.totalSaved).toBe(100);
+    expect(r.totalSaved).toBe(800);
   });
 });
 
@@ -122,5 +123,39 @@ describe('aggregateOverall with pricing', () => {
     const m3 = r.byModel.find(m => m.model === 'minimax-m3');
     expect(m3?.pricing).toBeDefined();
     expect(m3?.pricing?.inputPerMTok).toBe(0.30);
+  });
+});
+
+describe('aggregateBySession defensive handling', () => {
+  test('old session.end (no totals) does not destroy running sum', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      {
+        ts: 3,
+        type: 'session.end',
+        sessionId: 's1',
+        durationMs: 5000,
+        totalInputTokens: undefined as unknown as number,
+        totalOriginalInputTokens: undefined as unknown as number,
+        totalOutputTokens: undefined as unknown as number,
+      },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.totalInputTokens).toBe(200);
+    expect(r.totalOriginalInputTokens).toBe(1000);
+    expect(r.totalSaved).toBe(800);
+  });
+
+  test('new session.end with totals takes output tokens but not input', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 5000, totalInputTokens: 999, totalOriginalInputTokens: 888, totalOutputTokens: 500 },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.totalInputTokens).toBe(200);
+    expect(r.totalOriginalInputTokens).toBe(1000);
+    expect(r.totalOutputTokens).toBe(500);
   });
 });

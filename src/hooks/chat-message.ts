@@ -1,5 +1,4 @@
 import { Logger } from '../utils/logger';
-import { countTokens } from '../utils/token-counter';
 import type { CompressionMode, PluginConfig } from '../types';
 
 interface SessionTurnState {
@@ -54,6 +53,12 @@ export function getSessionTotals(sessionID: string): {
   };
 }
 
+export function addOutputTokens(sessionID: string, tokens: number): void {
+  const s = turnStates.get(sessionID);
+  if (!s) return;
+  s.totalOutputTokens += tokens;
+}
+
 export function createChatMessageHook() {
   return async (
     hookInput: {
@@ -69,17 +74,7 @@ export function createChatMessageHook() {
     if (!state) return;
     state.turnCount++;
     Logger.debug(
-      `[chat.message] session=${hookInput.sessionID} turn=${state.turnCount} model=${hookInput.model?.modelID ?? 'unknown'}`
+      `[chat.message] session=${hookInput.sessionID.slice(0, 8)}… turn=${state.turnCount} model=${hookInput.model?.modelID ?? 'unknown'} role=${output.message?.role ?? '?'}`
     );
-
-    if (output.message?.role === 'assistant') {
-      const text = (output.parts ?? [])
-        .filter((p) => p.type === 'text')
-        .map((p) => p.text ?? '')
-        .join('\n');
-      if (text.length > 0) {
-        state.totalOutputTokens += countTokens(text);
-      }
-    }
   };
 }
