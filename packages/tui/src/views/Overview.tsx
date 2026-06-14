@@ -47,6 +47,14 @@ export const Overview = ({ stats, pricing }: OverviewProps) => {
         </Box>
       )}
 
+      {stats.actualCost > 0 && (
+        <Box marginBottom={1}>
+          <Text>Cost paid: </Text>
+          <Text bold color="yellow">${stats.actualCost.toFixed(6)}</Text>
+          <Text dimColor>  (from LLM provider, exact) · {stats.sessionsWithActualCost} session(s)</Text>
+        </Box>
+      )}
+
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Mode distribution:</Text>
         {stats.byMode.map(m => {

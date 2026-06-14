@@ -48,6 +48,7 @@ function newSessionEntry(
     totalOriginalInputTokens: 0, totalInputTokens: 0, totalOutputTokens: 0,
     totalSaved: 0, errorCount: 0,
     costInput: 0, costInputOriginal: 0, costOutput: 0, costTotal: 0, costTotalOriginal: 0, costSaved: 0,
+    actualCost: 0,
     pricing,
   };
 }
@@ -89,6 +90,9 @@ export function aggregateBySession(events: StatsEvent[], pricingMap: Map<string,
         s.durationMs = ev.durationMs;
         if (typeof ev.totalOutputTokens === 'number') {
           s.totalOutputTokens = Math.max(s.totalOutputTokens, ev.totalOutputTokens);
+        }
+        if (typeof ev.actualCost === 'number') {
+          s.actualCost = ev.actualCost;
         }
         const costs = computeCost(
           s.totalOriginalInputTokens,
@@ -136,6 +140,7 @@ interface ModelAggregate {
   costTotal: number;
   costTotalOriginal: number;
   costSaved: number;
+  actualCost: number;
   pricing?: Pricing;
 }
 
@@ -154,6 +159,7 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
       costTotal: 0,
       costTotalOriginal: 0,
       costSaved: 0,
+      actualCost: 0,
       pricing: s.pricing,
     };
     m.sessions++;
@@ -164,6 +170,7 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
     m.costTotal += s.costTotal;
     m.costTotalOriginal += s.costTotalOriginal;
     m.costSaved += s.costSaved;
+    m.actualCost += s.actualCost;
     byModelMap.set(s.model, m);
   }
   const byModel: ModelStats[] = Array.from(byModelMap.entries())
@@ -178,6 +185,7 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
       costTotal: v.costTotal,
       costTotalOriginal: v.costTotalOriginal,
       costSaved: v.costSaved,
+      actualCost: v.actualCost,
       pricing: v.pricing,
     }))
     .sort((a, b) => b.sessions - a.sessions);
@@ -209,6 +217,8 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
   const costTotal = allSessions.reduce((sum, s) => sum + s.costTotal, 0);
   const costTotalOriginal = allSessions.reduce((sum, s) => sum + s.costTotalOriginal, 0);
   const costSaved = costTotalOriginal - costTotal;
+  const actualCost = allSessions.reduce((sum, s) => sum + s.actualCost, 0);
+  const sessionsWithActualCost = allSessions.filter(s => s.actualCost > 0).length;
   const modelsWithPricing = byModel.filter(m => m.pricing !== undefined).length;
 
   return {
@@ -225,6 +235,8 @@ export function aggregateOverall(events: StatsEvent[], pricingMap: Map<string, P
     costTotal,
     costTotalOriginal,
     costSaved,
+    actualCost,
     modelsWithPricing,
+    sessionsWithActualCost,
   };
 }

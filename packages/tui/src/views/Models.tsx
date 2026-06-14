@@ -22,15 +22,18 @@ export const Models = ({ byModel }: { byModel: ModelStats[] }) => {
         <Text bold>{'Cost orig'.padStart(12)}</Text>
         <Text bold>{'Cost now'.padStart(12)}</Text>
         <Text bold>{'Saved $'.padStart(12)}</Text>
+        <Text bold>{'Actual $'.padStart(12)}</Text>
         <Text bold>{'Ratio'.padStart(8)}</Text>
       </Box>
-      <Text>{'─'.repeat(132)}</Text>
+      <Text>{'─'.repeat(144)}</Text>
       {byModel.map(m => {
         const hasPricing = m.pricing !== undefined;
         const costOrig = hasPricing ? `$${m.costTotalOriginal.toFixed(4)}` : 'n/a';
         const costNow = hasPricing ? `$${m.costTotal.toFixed(4)}` : 'n/a';
         const costSaved = hasPricing ? `$${m.costSaved.toFixed(4)}` : 'n/a';
+        const actualCost = m.actualCost > 0 ? `$${m.actualCost.toFixed(4)}` : 'n/a';
         const costColor = hasPricing ? 'green' : undefined;
+        const actualColor = m.actualCost > 0 ? 'yellow' : undefined;
         return (
           <Box key={m.model}>
             <Text>{m.model.padEnd(28)}</Text>
@@ -42,6 +45,7 @@ export const Models = ({ byModel }: { byModel: ModelStats[] }) => {
             <Text color={costColor}>{costOrig.padStart(12)}</Text>
             <Text color={costColor}>{costNow.padStart(12)}</Text>
             <Text color={costColor}>{costSaved.padStart(12)}</Text>
+            <Text color={actualColor}>{actualCost.padStart(12)}</Text>
             <Text color="cyan">{fmtPct(m.avgRatio).padStart(8)}</Text>
           </Box>
         );

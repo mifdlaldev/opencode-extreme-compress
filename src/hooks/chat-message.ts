@@ -11,6 +11,7 @@ interface SessionTurnState {
 }
 
 const turnStates = new Map<string, SessionTurnState>();
+const messageCosts = new Map<string, number>();
 
 export function getSessionTurnState(sessionID: string): SessionTurnState | undefined {
   return turnStates.get(sessionID);
@@ -59,15 +60,21 @@ export function addOutputTokens(sessionID: string, tokens: number): void {
   s.totalOutputTokens += tokens;
 }
 
+export function addMessageCost(sessionID: string, cost: number): void {
+  messageCosts.set(sessionID, (messageCosts.get(sessionID) ?? 0) + cost);
+}
+
+export function getMessageCost(sessionID: string): number {
+  return messageCosts.get(sessionID) ?? 0;
+}
+
+export function clearMessageCost(sessionID: string): void {
+  messageCosts.delete(sessionID);
+}
+
 export function createChatMessageHook() {
   return async (
-    hookInput: {
-      sessionID: string;
-      agent?: string;
-      model?: { providerID: string; modelID: string };
-      messageID?: string;
-      variant?: string;
-    },
+    hookInput: { sessionID: string; agent?: string; model?: { providerID: string; modelID: string }; messageID?: string; variant?: string },
     output: { message: { role?: string }; parts: { type: string; text?: string }[] }
   ): Promise<void> => {
     const state = turnStates.get(hookInput.sessionID);

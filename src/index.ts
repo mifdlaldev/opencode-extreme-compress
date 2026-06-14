@@ -26,7 +26,6 @@ const configPath =
   process.env.EXTREME_COMPRESS_CONFIG ??
   `${process.env.HOME ?? ''}/.config/opencode/extreme-compress.jsonc`;
 
-const sessionModels = new Map<string, string>();
 const sessionStartTimes = new Map<string, number>();
 
 export const ExtremeCompressPlugin: Plugin = async (input) => {
@@ -44,7 +43,7 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
   const chatMsg = createChatMessageHook();
   const messagesTransform = createMessagesTransformHook(input);
   const sessionCompacting = createSessionCompactingHook();
-  const eventHook = createEventHook(getSessionState, sessionStartTimes, sessionModels);
+  const eventHook = createEventHook(getSessionState, sessionStartTimes);
 
   return {
     event: eventHook,
@@ -63,7 +62,7 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
       const modelId = hookInput.model?.modelID ?? '';
       const mode = resolveEffectiveMode(config, modelId);
 
-      if (!sessionModels.has(hookInput.sessionID)) {
+      if (!sessionStartTimes.has(hookInput.sessionID)) {
         setSessionState(hookInput.sessionID, { config, mode });
         setSessionTurnState(hookInput.sessionID, {
           config,
@@ -73,7 +72,6 @@ export const ExtremeCompressPlugin: Plugin = async (input) => {
           totalOriginalInputTokens: 0,
           totalOutputTokens: 0,
         });
-        sessionModels.set(hookInput.sessionID, modelId);
         sessionStartTimes.set(hookInput.sessionID, Date.now() / 1000);
         getStatsEmitter()?.emit({
           ts: Date.now() / 1000,

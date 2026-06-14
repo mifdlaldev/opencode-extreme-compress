@@ -8,7 +8,7 @@ export interface Pricing {
 
 export type StatsEvent =
   | { ts: number; type: 'session.start'; sessionId: string; model: string; mode: string }
-  | { ts: number; type: 'session.end'; sessionId: string; durationMs: number; totalInputTokens: number; totalOriginalInputTokens: number; totalOutputTokens: number }
+  | { ts: number; type: 'session.end'; sessionId: string; durationMs: number; totalInputTokens?: number; totalOriginalInputTokens?: number; totalOutputTokens?: number; actualCost?: number }
   | { ts: number; type: 'L1'; sessionId: string; tool: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number; method?: 'none' | 'truncate' }
   | { ts: number; type: 'L2'; sessionId: string; file: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number }
   | { ts: number; type: 'L3'; sessionId: string; inputTokens?: number; compressedInputTokens?: number; orig?: number; comp?: number; ratio: number; verified: boolean }
@@ -36,6 +36,7 @@ export interface SessionStats {
   costTotal: number;          // = costInput + costOutput (actual spent)
   costTotalOriginal: number;  // = costInputOriginal + costOutput (would-have-spent)
   costSaved: number;          // = costTotalOriginal - costTotal
+  actualCost: number;         // EXACT USD cost from LLM provider (sum of info.cost)
   pricing?: Pricing;          // pricing used for this session, if available
 }
 
@@ -50,6 +51,7 @@ export interface ModelStats {
   costTotal: number;
   costTotalOriginal: number;
   costSaved: number;
+  actualCost: number;
   pricing?: Pricing;
 }
 
@@ -82,5 +84,7 @@ export interface OverallStats {
   costTotal: number;
   costTotalOriginal: number;
   costSaved: number;
-  modelsWithPricing: number;  // count of models in byModel that had pricing data
+  actualCost: number;             // EXACT USD cost from LLM provider
+  modelsWithPricing: number;      // count of models in byModel that had pricing data
+  sessionsWithActualCost: number; // count of sessions where LLM reported exact cost
 }

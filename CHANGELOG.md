@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-06-14
+
+### Fixed
+- **Critical: v0.3.4 event hook used wrong SDK event property shape** (`event.properties.message` instead of `event.properties.info`), so output/cost tracking was silently broken. v0.3.5 reads the real `AssistantMessage` shape from opencode SDK and uses **EXACT** `info.tokens.output` and `info.cost` directly from the LLM provider.
+
+### Added
+- Plugin: per-session message cost tracker (`addMessageCost`/`getMessageCost`/`clearMessageCost`) accumulates `info.cost` from each assistant message.
+- Plugin: event hook now listens to both `session.idle` (deprecated but still fires) and `session.status` (modern), emitting `session.end` only on `idle`/`ready` status (not `busy`).
+- TUI types: `actualCost` field on `session.end` event, `SessionStats`, `ModelStats`, and `OverallStats`. `sessionsWithActualCost` on `OverallStats`.
+- TUI Overview: new "Cost paid" line showing exact USD cost from LLM provider, with session count.
+- TUI Models view: new "Actual $" column (per-model, exact from LLM).
+- TUI Sessions view: new "Paid $" column (per-session, exact from LLM).
+
+### Tests
+- `event-hook.test.ts`: rewritten for v0.3.5 — uses `info.tokens`/`info.cost` shape, covers both `session.idle` and `session.status` (idle/busy) events, plus dedup and non-assistant role filtering.
+- `aggregate.test.ts`: new `actualCost` tests — tracks from `session.end`, sums across sessions, aggregates per-model, stores on session entry.
+
 ## [0.1.0] - 2026-06-13
 
 ### Added

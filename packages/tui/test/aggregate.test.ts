@@ -189,3 +189,70 @@ describe('aggregateBySession with duplicate session.start', () => {
     expect(r.totalSaved).toBe(1200);
   });
 });
+
+describe('aggregateOverall with actualCost (v0.3.5)', () => {
+  test('tracks actualCost from session.end', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'minimax-m3', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 200, totalOriginalInputTokens: 1000, totalOutputTokens: 500, actualCost: 0.001234 },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.actualCost).toBeCloseTo(0.001234);
+    expect(r.sessionsWithActualCost).toBe(1);
+  });
+
+  test('sessions without actualCost are 0', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
+      { ts: 2, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50 },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.actualCost).toBe(0);
+    expect(r.sessionsWithActualCost).toBe(0);
+  });
+
+  test('sums actualCost across multiple sessions', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm1', mode: 'light' },
+      { ts: 2, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.001 },
+      { ts: 3, type: 'session.start', sessionId: 's2', model: 'm2', mode: 'light' },
+      { ts: 4, type: 'session.end', sessionId: 's2', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.0025 },
+      { ts: 5, type: 'session.start', sessionId: 's3', model: 'm3', mode: 'light' },
+      { ts: 6, type: 'session.end', sessionId: 's3', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.0005 },
+    ];
+    const r = aggregateOverall(events, new Map());
+    expect(r.actualCost).toBeCloseTo(0.0035);
+    expect(r.sessionsWithActualCost).toBe(3);
+  });
+
+  test('byModel aggregates actualCost per model', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm1', mode: 'light' },
+      { ts: 2, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.001 },
+      { ts: 3, type: 'session.start', sessionId: 's2', model: 'm1', mode: 'light' },
+      { ts: 4, type: 'session.end', sessionId: 's2', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.002 },
+      { ts: 5, type: 'session.start', sessionId: 's3', model: 'm2', mode: 'light' },
+      { ts: 6, type: 'session.end', sessionId: 's3', durationMs: 1000, totalInputTokens: 100, totalOriginalInputTokens: 200, totalOutputTokens: 50, actualCost: 0.003 },
+    ];
+    const r = aggregateOverall(events, new Map());
+    const m1 = r.byModel.find(m => m.model === 'm1');
+    const m2 = r.byModel.find(m => m.model === 'm2');
+    expect(m1?.actualCost).toBeCloseTo(0.003);
+    expect(m2?.actualCost).toBeCloseTo(0.003);
+  });
+});
+
+describe('aggregateBySession with actualCost', () => {
+  test('session.end stores actualCost on session', () => {
+    const events: StatsEvent[] = [
+      { ts: 1, type: 'session.start', sessionId: 's1', model: 'm', mode: 'light' },
+      { ts: 2, type: 'L1', sessionId: 's1', tool: 'read', inputTokens: 1000, compressedInputTokens: 200, ratio: 0.8, method: 'truncate' },
+      { ts: 3, type: 'session.end', sessionId: 's1', durationMs: 1000, totalInputTokens: 200, totalOriginalInputTokens: 1000, totalOutputTokens: 500, actualCost: 0.0042 },
+    ];
+    const sessions = aggregateBySession(events, new Map());
+    const s = sessions.get('s1');
+    expect(s).toBeDefined();
+    expect(s?.actualCost).toBeCloseTo(0.0042);
+  });
+});
