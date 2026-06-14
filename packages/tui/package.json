@@ -1,6 +1,6 @@
 {
-  "name": "@opencode-extreme-compress/tui",
-  "version": "0.1.0",
+  "name": "xtui",
+  "version": "0.3.1",
   "type": "module",
   "bin": { "xtui": "./dist/cli.js" },
   "scripts": {
