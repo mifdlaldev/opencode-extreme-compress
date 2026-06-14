@@ -1,32 +1,15 @@
 import type { CompressionMode, PluginConfig } from './types';
-import { resolveProfile } from './config';
 
 /**
  * Resolve the effective compression mode for a session.
  *
- * Precedence (highest to lowest):
- * 1. `config.mode` — the user's explicit choice in compress.jsonc (ALWAYS wins)
- * 2. `profile.mode` — model's preferred mode (auto-pick for that model)
- *
- * Why config.mode wins: users explicitly set `mode: "shadow"` expecting
- * shadow behavior. If profile.mode silently overrode this, users would
- * be confused (e.g., "I set shadow but L1 events are firing"). Profile is
- * still used for maxContextUsage, but NOT for picking the compression mode.
- *
- * Special case: if config.mode is unspecified in the future, profile.mode
- * would be used as fallback. For now, config.mode is required.
+ * config.mode is the user's explicit choice in compress.jsonc and always wins.
+ * Profile.mode was removed in v0.2.4 because it silently overrode the user's
+ * choice (e.g., user-set "shadow" was overridden to "light" by M3 profile).
+ * Profile.maxContextUsage is still used for output budget tracking.
  */
 export function resolveEffectiveMode(config: PluginConfig, _modelId: string): CompressionMode {
   return config.mode;
-}
-
-/**
- * @deprecated Use config.mode directly. Kept for backwards compatibility.
- * Returns the profile's suggested mode, but does NOT affect effective mode.
- */
-export function suggestedModeForModel(config: PluginConfig, modelId: string): CompressionMode {
-  const profile = resolveProfile(config, modelId);
-  return profile.mode;
 }
 
 export function shouldApplyLayer(

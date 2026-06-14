@@ -17,9 +17,9 @@ describe('Integration tests', () => {
     const config = {
       mode: 'light' as const,
       modelProfiles: {
-        '*': { mode: 'light' as const, maxContextUsage: 0.95 },
-        'minimax-m3': { mode: 'light' as const, maxContextUsage: 0.95 },
-        'deepseek-v4-flash-free': { mode: 'medium' as const, maxContextUsage: 0.8 },
+        '*': { maxContextUsage: 0.95 },
+        'minimax-m3': { maxContextUsage: 0.95 },
+        'deepseek-v4-flash-free': { maxContextUsage: 0.8 },
       },
     };
 

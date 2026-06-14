@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { loadConfig } from '../src/config';
-import { resolveEffectiveMode, shouldApplyLayer, suggestedModeForModel } from '../src/modes';
+import { resolveEffectiveMode, shouldApplyLayer } from '../src/modes';
 
 describe('Model-specific behavior (config.mode wins over profile)', () => {
   test('1. config.mode = "light" → flash uses light (not profile medium)', async () => {
@@ -37,11 +37,5 @@ describe('Model-specific behavior (config.mode wins over profile)', () => {
     expect(shouldApplyLayer('light', 'toolOutput')).toBe(true);
     expect(shouldApplyLayer('light', 'fileContent')).toBe(false);
     expect(shouldApplyLayer('light', 'semantic')).toBe(false);
-  });
-
-  test('6. suggestedModeForModel still returns profile preference (informational)', async () => {
-    const config = await loadConfig();
-    expect(suggestedModeForModel(config, 'deepseek-v4-flash-free')).toBe('medium');
-    expect(suggestedModeForModel(config, 'minimax-m3')).toBe('light');
   });
 });

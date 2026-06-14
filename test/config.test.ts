@@ -27,9 +27,9 @@ describe('config loader', () => {
     expect(config.modelProfiles['deepseek-v4-flash-free']).toBeDefined();
   });
 
-  test('getDefaultConfig has flash profile set to medium by default', () => {
+  test('getDefaultConfig has flash profile with aggressive budget (0.80)', () => {
     const config = getDefaultConfig();
-    expect(config.modelProfiles['deepseek-v4-flash-free'].mode).toBe('medium');
+    expect(config.modelProfiles['deepseek-v4-flash-free'].maxContextUsage).toBe(0.80);
   });
 
   test('loadConfig with missing file returns defaults', async () => {
@@ -109,18 +109,17 @@ describe('resolveProfile', () => {
 
   test('returns exact match for known model', () => {
     const profile = resolveProfile(config, 'minimax-m3');
-    expect(profile.mode).toBe('light');
+    expect(profile.maxContextUsage).toBe(0.95);
   });
 
   test('returns flash profile for flash model', () => {
     const profile = resolveProfile(config, 'deepseek-v4-flash-free');
-    expect(profile.mode).toBe('medium');
+    expect(profile.maxContextUsage).toBe(0.80);
   });
 
   test('falls back to "*" for unknown model', () => {
     const profile = resolveProfile(config, 'unknown-model-xyz');
-    expect(profile.mode).toBe('light'); // * default
-    expect(profile.maxContextUsage).toBe(0.95);
+    expect(profile.maxContextUsage).toBe(0.95); // * default
   });
 });
 

@@ -1,13 +1,13 @@
 import { describe, test, expect } from 'bun:test';
-import { resolveEffectiveMode, shouldApplyLayer, suggestedModeForModel } from '../src/modes';
+import { resolveEffectiveMode, shouldApplyLayer } from '../src/modes';
 import type { PluginConfig } from '../src/types';
 
 const baseConfig: PluginConfig = {
   mode: 'light',
   modelProfiles: {
-    '*': { mode: 'light', maxContextUsage: 0.95 },
-    'minimax-m3': { mode: 'light', maxContextUsage: 0.95 },
-    'deepseek-v4-flash-free': { mode: 'medium', maxContextUsage: 0.80 },
+    '*': { maxContextUsage: 0.95 },
+    'minimax-m3': { maxContextUsage: 0.95 },
+    'deepseek-v4-flash-free': { maxContextUsage: 0.80 },
   },
   outputBudget: { enabled: true, trackRemaining: true, triggerIfLow: 0.20 },
   propagateToSubagents: { enabled: true, mode: 'inherit', excludeSubagents: [] },
@@ -42,13 +42,6 @@ describe('mode resolution (config.mode wins over profile)', () => {
   test('config.mode = "off" returns off (disable all compression)', () => {
     const cfg = { ...baseConfig, mode: 'off' as const };
     expect(resolveEffectiveMode(cfg, 'any-model')).toBe('off');
-  });
-});
-
-describe('suggestedModeForModel (profile-only helper, deprecated)', () => {
-  test('returns profile mode (informational only)', () => {
-    expect(suggestedModeForModel(baseConfig, 'minimax-m3')).toBe('light');
-    expect(suggestedModeForModel(baseConfig, 'deepseek-v4-flash-free')).toBe('medium');
   });
 });
 

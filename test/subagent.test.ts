@@ -4,7 +4,7 @@ import type { PluginConfig } from '../src/types';
 
 const baseConfig: PluginConfig = {
   mode: 'light',
-  modelProfiles: { '*': { mode: 'light', maxContextUsage: 0.95 } },
+  modelProfiles: { '*': { maxContextUsage: 0.95 } },
   outputBudget: { enabled: true, trackRemaining: true, triggerIfLow: 0.20 },
   propagateToSubagents: { enabled: true, mode: 'inherit', excludeSubagents: ['oracle'] },
   tokenizer: { strategy: 'auto', modelTokenizers: {} },

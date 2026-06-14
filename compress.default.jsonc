@@ -2,11 +2,11 @@
   "$schema": "compress.schema.json",
   "mode": "light",
   "modelProfiles": {
-    "*": { "mode": "light", "maxContextUsage": 0.95 },
-    "deepseek-v4-flash-free": { "mode": "medium", "maxContextUsage": 0.80 },
-    "minimax-m3": { "mode": "light", "maxContextUsage": 0.95 },
-    "kimi-k2.6": { "mode": "light", "maxContextUsage": 0.90 },
-    "mimo-v2.5-free": { "mode": "medium", "maxContextUsage": 0.85 }
+    "*": { "maxContextUsage": 0.95 },
+    "deepseek-v4-flash-free": { "maxContextUsage": 0.80 },
+    "minimax-m3": { "maxContextUsage": 0.95 },
+    "kimi-k2.6": { "maxContextUsage": 0.90 },
+    "mimo-v2.5-free": { "maxContextUsage": 0.85 }
   },
   "outputBudget": {
     "enabled": true,

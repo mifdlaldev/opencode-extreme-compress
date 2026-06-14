@@ -3,7 +3,6 @@
 export type CompressionMode = 'off' | 'shadow' | 'light' | 'medium' | 'extreme';
 
 export interface ModelProfile {
-  mode: CompressionMode;
   maxContextUsage: number;  // 0.0 - 1.0, fraction of model context that can be used before compression triggers
 }
 

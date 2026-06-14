@@ -2,12 +2,11 @@ import type { PluginConfig, ModelProfile } from './types';
 
 export function getDefaultConfig(): PluginConfig {
   const modelProfiles: Record<string, ModelProfile> = {
-    '*': { mode: 'light', maxContextUsage: 0.95 },
-    'deepseek-v4-flash-free': { mode: 'medium', maxContextUsage: 0.80 },
-    'minimax-m3': { mode: 'light', maxContextUsage: 0.95 },
-    'minimax-m2.7': { mode: 'light', maxContextUsage: 0.90 },
-    'kimi-k2.6': { mode: 'light', maxContextUsage: 0.90 },
-    'mimo-v2.5-free': { mode: 'medium', maxContextUsage: 0.85 },
+    '*': { maxContextUsage: 0.95 },
+    'deepseek-v4-flash-free': { maxContextUsage: 0.80 },
+    'minimax-m3': { maxContextUsage: 0.95 },
+    'kimi-k2.6': { maxContextUsage: 0.90 },
+    'mimo-v2.5-free': { maxContextUsage: 0.85 },
   };
 
   return {
